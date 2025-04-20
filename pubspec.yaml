@@ -1,0 +1,46 @@
+name: flame_jam_2025
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  equatable_annotations: ^1.0.0
+  flame: ^1.28.0
+  bloc: ^9.0.0
+  copy_with_extension: ^6.0.1
+  equatable: ^2.0.7
+  flame_behaviors: ^1.2.0
+  flame_bloc: ^1.12.11
+  flame_splash_screen: ^0.3.1+2
+  flame_tiled: ^3.0.1
+  flex_color_scheme: ^8.2.0
+  flutter_bloc: ^9.1.0
+  go_router: ^15.0.0
+  go_router_paths: ^0.2.2
+  logging: ^1.3.0
+  flutter_shaders: ^0.1.3
+  flame_forge2d: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.15
+  copy_with_extension_gen: ^6.0.1
+  flame_lint: ^1.3.0
+  very_good_analysis: ^7.0.0
+
+flutter:
+  uses-material-design: true
+
+scripts: derry.yaml
