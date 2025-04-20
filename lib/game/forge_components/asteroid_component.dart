@@ -1,20 +1,46 @@
+import 'dart:developer' as message;
+import 'dart:math';
+
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/pesky_satellites.dart';
+import 'package:flutter/material.dart';
 
 class AsteroidComponent extends BodyComponent<PeskySatellites>
     with ContactCallbacks {
-  AsteroidComponent({super.priority, this.isOrbiting}) {
+  AsteroidComponent({
+    super.priority,
+    this.isOrbiting,
+    this.isFiring,
+    this.currentColor,
+  }) {
     isOrbiting = false;
+    isFiring = isFiring ?? false;
   }
 
   late bool? isOrbiting;
+  late bool? isFiring;
+  late Color? currentColor;
+
+  @override
+  Future<void> onLoad() {
+    final rnd = Random();
+    if (rnd.nextBool()) {
+      paint = Paint()..color = Colors.brown;
+    } else {
+      paint = Paint()..color = Colors.blueGrey;
+    }
+    return super.onLoad();
+  }
+
   @override
   Body createBody() {
+    final currentPosition =
+        isFiring! ? game.firingPosition : game.asteroidPosition;
     final def = BodyDef(
       userData: this,
       isAwake: true,
       type: BodyType.dynamic,
-      position: game.asteroidPosition,
+      position: currentPosition,
     );
 
     final body = world.createBody(def)..userData = this;
@@ -25,8 +51,22 @@ class AsteroidComponent extends BodyComponent<PeskySatellites>
     );
     body.createFixtureFromShape(circle);
     body.synchronizeFixtures();
-    body.applyLinearImpulse(Vector2(11, -17));
     body.setMassData(MassData()..mass = 1.2);
+    if (isFiring ?? false) {
+      var speed = 50;
+      var velocityX = game.firingAngle.x - body.position.x;
+      var velocityY = game.firingAngle.y - body.position.y;
+      var length = sqrt(velocityX * velocityX + velocityY * velocityY);
+
+      velocityX *= speed / length;
+
+      velocityY *= speed / length;
+
+      body.applyLinearImpulse(Vector2(velocityX, velocityY));
+    } else {
+      body.applyLinearImpulse(game.asteroidAngle);
+    }
+
     return body;
   }
 
@@ -51,11 +91,9 @@ class AsteroidComponent extends BodyComponent<PeskySatellites>
   //   body.applyForce(currentForwardNormal..scale(30));
   // }
 
-  final Vector2 _worldRight = Vector2(-1, 0.0);
-
-  Vector2 get _forwardVelocity {
-    final currentForwardNormal = body.worldVector(_worldRight);
-    return currentForwardNormal
-      ..scale(currentForwardNormal.dot(body.linearVelocity));
+  @override
+  void onRemove() {
+    message.log('Deleted');
+    super.onRemove();
   }
 }
