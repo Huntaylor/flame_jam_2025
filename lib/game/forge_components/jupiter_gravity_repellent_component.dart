@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flame/components.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroid_component.dart';
@@ -7,13 +9,12 @@ import 'package:flutter/material.dart';
 class JupiterGravityRepellentComponent extends BodyComponent<PeskySatellites>
     with ContactCallbacks {
   JupiterGravityRepellentComponent({super.priority})
-    : super(
-        paint:
-            Paint()
-              ..color = Colors.red
-              ..strokeWidth = 0.5
-              ..style = PaintingStyle.stroke,
-      );
+      : super(
+          paint: Paint()
+            ..color = Colors.red
+            ..strokeWidth = 0.5
+            ..style = PaintingStyle.stroke,
+        );
 
   List<AsteroidComponent> asteroids = [];
 
@@ -45,20 +46,25 @@ class JupiterGravityRepellentComponent extends BodyComponent<PeskySatellites>
   void update(double dt) {
     if (asteroids.isNotEmpty) {
       for (var asteroid in asteroids) {
-        if (!asteroid.isOrbiting!) {
+        if (!asteroid.isOrbiting! && !asteroid.isFiring!) {
           final jupiterPosition = game.jupiterPosition.clone();
 
-          Vector2 gravityDirection =
-              jupiterPosition..sub(asteroid.body.worldCenter);
+          Vector2 gravityDirection = jupiterPosition
+            ..sub(asteroid.body.worldCenter);
 
           final distance = asteroid.body.worldCenter.distanceTo(
             jupiterPosition,
           );
-          final clamDis = distance.clamp(55, 70);
-          gravityDirection.scaleTo(clamDis * .00089);
+          final double jupiterGravity = 24.79;
+          final double jupiterMass = 254.0;
+          final gravity = (jupiterGravity *
+              (asteroid.body.getMassData().mass *
+                  jupiterMass %
+                  pow(distance, 2)));
+          gravityDirection.scaleTo(gravity * dt);
 
-          asteroid.body.applyLinearImpulse(
-            gravityDirection.inverted(),
+          asteroid.body.applyForce(
+            (gravityDirection / 7).inverted(),
             point: asteroid.body.worldCenter,
           );
         }
@@ -67,20 +73,6 @@ class JupiterGravityRepellentComponent extends BodyComponent<PeskySatellites>
 
     super.update(dt);
   }
-
-  // final _paintLine = Paint();
-
-  // @override
-  // void render(Canvas canvas) {
-  //   canvas.drawLine(
-  //     game.earthPosition.toOffset(),
-  //     game.jupiterPosition.toOffset(),
-  //     _paintLine
-  //       ..style = PaintingStyle.fill
-  //       ..color = Colors.red,
-  //   );
-  //   super.render(canvas);
-  // }
 
   @override
   Body createBody() {

@@ -9,10 +9,13 @@ import 'package:flame_jam_2025/game/forge_components/asteroid_component.dart';
 import 'package:flame_jam_2025/game/forge_components/jupiter_component.dart';
 import 'package:flame_jam_2025/game/forge_components/jupiter_gravity_component.dart';
 import 'package:flame_jam_2025/game/forge_components/jupiter_gravity_repellent_component.dart';
-import 'package:flutter/material.dart';
 
 class PeskySatellites extends Forge2DGame
-    with HasCollisionDetection, TapCallbacks, MouseMovementDetector {
+    with
+        HasCollisionDetection,
+        TapCallbacks,
+        MouseMovementDetector,
+        DragCallbacks {
   PeskySatellites() : super(gravity: Vector2(0, 0)) {
     jupiterSize = 9;
     earthSize = (jupiterSize / 11);
@@ -33,7 +36,7 @@ class PeskySatellites extends Forge2DGame
   late Vector2 asteroidPosition;
   late Vector2 firingPosition;
   late Vector2 asteroidAngle;
-  Vector2 firingAngle = Vector2.zero();
+  Vector2 targetPosition = Vector2.zero();
 
   late AsteroidComponent asteroidComponent;
   late JupiterComponent jupiterComponent;
@@ -67,12 +70,6 @@ class PeskySatellites extends Forge2DGame
       anchor: Anchor.center,
     );
 
-    final asteroidAngleComponent =
-        AsteroidAngleComponent(anchor: Anchor.center)
-          ..paint = Paint()
-          ..setColor(Colors.transparent)
-          ..debugMode = false;
-
     viewfinder
       ..anchor = Anchor.topLeft
       ..zoom = 10;
@@ -85,8 +82,14 @@ class PeskySatellites extends Forge2DGame
       earth,
       asteroidComponent,
       jupiterGravityRepellentComponent,
-      asteroidAngleComponent,
     ]);
+    // final initialVec = Vector2(184, 75);
+    // for (var i = 0; i < 30; i++) {
+    //   print('adding');
+    //   final ast = AsteroidComponent(
+    //       newPosition: Vector2(initialVec.x - i, initialVec.y - i));
+    //   world.add(ast);
+    // }
 
     return super.onLoad();
   }
@@ -106,23 +109,41 @@ class PeskySatellites extends Forge2DGame
     timer.stop();
   }
 
-  @override
-  void onMouseMove(PointerHoverInfo info) {
-    firingAngle.setFrom(camera.globalToLocal(info.eventPosition.global));
-    super.onMouseMove(info);
-  }
+  // @override
+  // Future<void> onTapDown(TapDownEvent event) async {
+  //   super.onTapDown(event);
+  //   targetPosition.setFrom(camera.globalToLocal(event.devicePosition));
+
+  //   if (asteroids.isNotEmpty) {
+  //     final asteroid = asteroids.first;
+  //     asteroids.removeWhere((e) => e == asteroid);
+  //     asteroid.body.clearForces();
+  //     asteroid.fireAsteroid();
+  //     // final newAsteroid = AsteroidComponent(
+  //     //     isFiring: true,
+  //     //     currentPosition: asteroid.position,
+  //     //     currentColor: asteroid.currentColor);
+  //     // world.remove(asteroid);
+  //     // world.add(newAsteroid);
+
+  //     // asteroid.body.applyForce(Vector2(-250, 250));
+  //   }
+  // }
 
   @override
   Future<void> onTapDown(TapDownEvent event) async {
     super.onTapDown(event);
     if (asteroids.isNotEmpty) {
+      targetPosition.setFrom(camera.globalToLocal(event.devicePosition));
       final asteroid = asteroids.first;
+      final newAsteroid = AsteroidComponent(
+        isFiring: true,
+        newPosition: asteroid.position,
+        currentColor: asteroid.currentColor,
+      );
       asteroids.removeWhere((e) => e == asteroid);
       world.remove(asteroid);
-      final newAsteroid = AsteroidComponent(isFiring: true);
       world.add(newAsteroid);
-
-      // asteroid.body.applyForce(Vector2(-250, 250));
     }
   }
 }
