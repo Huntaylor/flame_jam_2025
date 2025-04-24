@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroid_component.dart';
-import 'package:flame_jam_2025/game/forge_components/satallite_component.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
 import 'package:flame_jam_2025/game/pesky_satellites.dart';
 import 'package:flutter/material.dart';
 
@@ -17,11 +17,20 @@ class JupiterGravityComponent extends BodyComponent<PeskySatellites>
             ..style = PaintingStyle.stroke,
         );
 
+  final double jupiterGravity = 24.79;
+  final double jupiterMass = 254.0;
+
+  final double limiter = 50;
+
   @override
   void beginContact(Object other, Contact contact) {
-    if (other is SatalliteComponent) {
-      other.isTooLate = true;
-      game.satallites.add(other);
+    if (other is SatelliteComponent) {
+      if (other.currentHealth > 0) {
+        other.isTooLate = true;
+        game.satellites.add(other);
+      } else {
+        other.destroySatellite();
+      }
     } else if (other is AsteroidComponent && !(other.isFiring ?? false)) {
       other.isOrbiting = true;
       game.asteroids.add(other);
@@ -31,35 +40,36 @@ class JupiterGravityComponent extends BodyComponent<PeskySatellites>
 
   @override
   void update(double dt) {
-    if (game.satallites.isNotEmpty) {
-      for (var satallite in game.satallites) {
-        if (satallite.isTooLate) {
+    if (game.satellites.isNotEmpty) {
+      for (var satellite in game.satellites) {
+        if (satellite.isTooLate) {
           final jupiterPosition = game.jupiterPosition.clone();
-
           Vector2 gravityDirection = jupiterPosition
-            ..sub(satallite.body.worldCenter);
+            ..sub(satellite.body.worldCenter);
 
-          final distance = satallite.body.worldCenter.distanceTo(
+          final distance = satellite.body.worldCenter.distanceTo(
             jupiterPosition,
           );
-          final double jupiterGravity = 24.79;
-          final double jupiterMass = 254.0;
+
           final gravity = (jupiterGravity *
-              (satallite.body.getMassData().mass *
+              (satellite.body.getMassData().mass *
                   jupiterMass %
                   pow(distance, 2)));
+
           gravityDirection.scaleTo(gravity * dt);
+
           final normalizedData =
-              satallite.body.linearVelocity.clone().normalize();
-          if (50 < normalizedData) {
+              satellite.body.linearVelocity.clone().normalize();
+
+          if (limiter < normalizedData) {
             //Max 50, starts to get too fast after that
-            satallite.body.applyForce(
-              satallite.body.linearVelocity.inverted(),
+            satellite.body.applyForce(
+              satellite.body.linearVelocity.inverted(),
             );
           } else {
-            satallite.body.applyForce(
+            satellite.body.applyForce(
               gravityDirection / 8,
-              point: satallite.body.worldCenter,
+              point: satellite.body.worldCenter,
             );
           }
         }
@@ -69,6 +79,8 @@ class JupiterGravityComponent extends BodyComponent<PeskySatellites>
     if (game.asteroids.isNotEmpty) {
       for (var asteroid in game.asteroids) {
         if (asteroid.isOrbiting!) {
+          // Trying to set this in the onLoad will break the gravity? Doesn't go the same way?
+          // Looks like it is staying like this
           final jupiterPosition = game.jupiterPosition.clone();
 
           Vector2 gravityDirection = jupiterPosition
@@ -77,8 +89,7 @@ class JupiterGravityComponent extends BodyComponent<PeskySatellites>
           final distance = asteroid.body.worldCenter.distanceTo(
             jupiterPosition,
           );
-          final double jupiterGravity = 24.79;
-          final double jupiterMass = 254.0;
+
           final gravity = (jupiterGravity *
               (asteroid.body.getMassData().mass *
                   jupiterMass %
@@ -86,7 +97,7 @@ class JupiterGravityComponent extends BodyComponent<PeskySatellites>
           gravityDirection.scaleTo(gravity * dt);
           final normalizedData =
               asteroid.body.linearVelocity.clone().normalize();
-          if (50 < normalizedData) {
+          if (limiter < normalizedData) {
             //Max 50, starts to get too fast after that
             // largestNumber = normalizedData;
             asteroid.body.applyForce(

@@ -5,20 +5,55 @@ import 'package:flame_jam_2025/game/forge_components/asteroid_component.dart';
 import 'package:flame_jam_2025/game/pesky_satellites.dart';
 import 'package:flutter/material.dart';
 
-class SatalliteComponent extends BodyComponent<PeskySatellites>
+enum SatelliteDifficulty { easy, medium, hard, boss }
+
+class SatelliteComponent extends BodyComponent<PeskySatellites>
     with ContactCallbacks {
-  SatalliteComponent({
+  SatelliteComponent({
     super.priority,
-    required this.totalHealth,
-  }) : super(paint: Paint()..color = Colors.grey);
+    required this.difficulty,
+  }) : super(paint: Paint()..color = Colors.grey) {
+    switch (difficulty) {
+      case SatelliteDifficulty.easy:
+        powerLevel = 1;
+        spawnChance = 0.6;
+        totalHealth = lightArmor;
+      case SatelliteDifficulty.medium:
+        powerLevel = 3;
+        spawnChance = 0.3;
+        totalHealth = mediumArmor;
+      case SatelliteDifficulty.hard:
+        powerLevel = 5;
+        spawnChance = 0.15;
+        totalHealth = heavyArmor;
+      case SatelliteDifficulty.boss:
+        powerLevel = 10;
+        spawnChance = 0.05;
+        totalHealth = bossArmor;
+    }
+  }
+
+  //Max 100 components - Max 30 asteroids
+  // 70 Satellites max
+
+  final double lightArmor = 50;
+  final double mediumArmor = 75;
+  final double heavyArmor = 100;
+  final double bossArmor = 250;
+
+  late double currentHealth;
+
+  final SatelliteDifficulty difficulty;
+
+  Vector2? _impulseTarget;
 
   bool isAlive = true;
 
-  final double totalHealth;
+  double? totalHealth;
+  double? powerLevel;
+  double? spawnChance;
 
   late AsteroidComponent contactAsteroid;
-
-  late double currentHealth;
 
   bool isTooLate = false;
 
@@ -55,32 +90,32 @@ class SatalliteComponent extends BodyComponent<PeskySatellites>
     ],
   ];
 
+  set setImpulseTarget(Vector2 target) => _impulseTarget = target;
+
   @override
   Future<void> onLoad() {
-    currentHealth = totalHealth;
+    setUpSatellite();
 
     return super.onLoad();
   }
 
-  // @override
-  // void update(double dt) {
-  //   body.setTransform(position, angle + .01);
-  //   super.update(dt);
-  // }
+  void setUpSatellite() {
+    currentHealth = totalHealth!;
+    print(currentHealth);
+  }
 
   void takeDamage(double damage) {
     if (!isTooLate) {
       currentHealth = currentHealth - damage;
-
-      // if (parent is SataHealthbarComponent) {
-      //   (parent as SataHealthbarComponent).updateHealth(currentHealth);
-      // }
-
       if (currentHealth <= 0 && isAlive) {
-        isAlive = false;
-        game.explodeSatallite(polyShapes, position, this);
+        destroySatellite();
       }
     }
+  }
+
+  void destroySatellite() {
+    isAlive = false;
+    game.explodeSatellite(polyShapes, position, this);
   }
 
   @override
@@ -96,7 +131,7 @@ class SatalliteComponent extends BodyComponent<PeskySatellites>
 
       customPaint.color = Colors.pinkAccent;
       double currentHealthWidth =
-          healthBarWidth * (currentHealth / totalHealth);
+          healthBarWidth * (currentHealth / totalHealth!);
       canvas.drawRect(
           Rect.fromLTWH(healthBarPosition.x, healthBarPosition.y,
               currentHealthWidth, healthBarHeight),
@@ -110,11 +145,12 @@ class SatalliteComponent extends BodyComponent<PeskySatellites>
   @override
   Body createBody() {
     final def = BodyDef(
-        angle: -45,
-        userData: this,
-        isAwake: true,
-        type: BodyType.dynamic,
-        position: game.earthPosition);
+      angle: -45,
+      userData: this,
+      isAwake: true,
+      type: BodyType.dynamic,
+      position: game.earthPosition,
+    );
 
     final body = world.createBody(def)..userData = this;
 
@@ -124,9 +160,9 @@ class SatalliteComponent extends BodyComponent<PeskySatellites>
     body.synchronizeFixtures();
 
     var speed = .5;
-    var velocityX = game.jupiterPosition.x - body.position.x;
+    var velocityX = _impulseTarget!.x - body.position.x;
 
-    var velocityY = game.jupiterPosition.y - body.position.y;
+    var velocityY = _impulseTarget!.y - body.position.y;
     var length = sqrt(velocityX * velocityX + velocityY * velocityY);
 
     velocityX *= speed / length;

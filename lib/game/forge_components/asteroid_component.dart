@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flame_forge2d/flame_forge2d.dart';
-import 'package:flame_jam_2025/game/forge_components/satallite_component.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
 import 'package:flame_jam_2025/game/pesky_satellites.dart';
 import 'package:flutter/material.dart';
 
@@ -13,20 +13,24 @@ class AsteroidComponent extends BodyComponent<PeskySatellites>
     this.isFiring,
     this.currentColor,
     this.newPosition,
-    required this.damage,
+    required this.startPosition,
+    required this.startingDamage,
   }) {
     isOrbiting = false;
     isFiring = isFiring ?? false;
   }
   final Vector2? newPosition;
+  final Vector2 startPosition;
   late bool? isOrbiting;
   late bool? isFiring;
   late Color? currentColor;
-  SatalliteComponent? sata;
+  SatelliteComponent? sate;
 
   late Vector2 fireVel;
 
-  final double damage;
+  final double startingDamage;
+
+  late double currentDamage;
 
   bool isSensor = true;
   bool dealtDamage = false;
@@ -39,6 +43,7 @@ class AsteroidComponent extends BodyComponent<PeskySatellites>
 
   @override
   Future<void> onLoad() {
+    currentDamage = startingDamage;
     Color chosenColor;
     turningDirection = random.nextDouble() * 0.1;
     final brown = Colors.brown;
@@ -69,24 +74,25 @@ class AsteroidComponent extends BodyComponent<PeskySatellites>
 
   @override
   void beginContact(Object other, Contact contact) {
-    if (other is SatalliteComponent) {
-      if (sata != null && other != sata) {
-        sata = other;
+    if (other is SatelliteComponent && !other.isTooLate) {
+      if (sate != null && other != sate) {
+        sate = other;
         dealtDamage = true;
-        if (other.totalHealth > damage) {
-          other.takeDamage(damage);
+        if (other.currentHealth >= currentDamage) {
+          other.takeDamage(currentDamage);
           game.explodeAsteroid(position, this);
         } else {
-          other.takeDamage(damage);
+          other.takeDamage(currentDamage);
         }
       } else if (!dealtDamage) {
-        sata = other;
+        sate = other;
         dealtDamage = true;
-        if (other.totalHealth > damage) {
-          other.takeDamage(damage);
+        if (other.currentHealth >= currentDamage) {
+          other.takeDamage(currentDamage);
           game.explodeAsteroid(position, this);
         } else {
-          other.takeDamage(damage);
+          currentDamage = currentDamage - other.currentHealth;
+          other.takeDamage(currentDamage);
         }
       }
     }
@@ -95,7 +101,7 @@ class AsteroidComponent extends BodyComponent<PeskySatellites>
 
   @override
   Body createBody() {
-    final _currentPosition = isFiring! ? newPosition : game.asteroidPosition;
+    final _currentPosition = isFiring! ? newPosition : startPosition;
     final def = BodyDef(
       userData: this,
       isAwake: true,

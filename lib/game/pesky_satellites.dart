@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
@@ -7,12 +8,12 @@ import 'package:flame/events.dart';
 import 'package:flame/particles.dart' as parts;
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/components/asteroid_angle_component.dart';
-import 'package:flame_jam_2025/game/components/sata_healthbar_component.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroid_component.dart';
 import 'package:flame_jam_2025/game/forge_components/jupiter_component.dart';
 import 'package:flame_jam_2025/game/forge_components/jupiter_gravity_component.dart';
 import 'package:flame_jam_2025/game/forge_components/jupiter_gravity_repellent_component.dart';
-import 'package:flame_jam_2025/game/forge_components/satallite_component.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
+import 'package:flame_jam_2025/game/managers/wave_manager.dart';
 import 'package:flutter/material.dart';
 
 class PeskySatellites extends Forge2DGame
@@ -25,15 +26,22 @@ class PeskySatellites extends Forge2DGame
     jupiterSize = 9;
     earthSize = (jupiterSize / 11);
     earthPosition = Vector2.all(15);
-    jupiterPosition = Vector2(earthPosition.x * 10, earthPosition.y * 5);
+    jupiterPosition = Vector2(150.0, 75.0);
     asteroidPosition = Vector2(jupiterPosition.x - 50, jupiterPosition.y + 50);
     firingPosition = Vector2(114, 59);
     asteroidAngle = Vector2(5, -20);
   }
 
-  late Timer asteroidTimer;
-  late Timer sataTimer;
-  late Timer stopTimer;
+  final double smallDamage = 25;
+  final double mediumDamage = 50;
+  final double heavyDamage = 75;
+  final double xHeavyDamage = 100;
+  final double cometDamage = 200;
+
+  // late Timer asteroidTimer;
+  // late Timer sateTimer;
+  // late Timer stopTimer;
+
   late double jupiterSize;
   late double earthSize;
 
@@ -44,38 +52,57 @@ class PeskySatellites extends Forge2DGame
   late Vector2 asteroidAngle;
   Vector2 targetPosition = Vector2.zero();
 
-  late AsteroidComponent asteroidComponent;
   late JupiterComponent jupiterComponent;
   late JupiterGravityComponent jupiterGravityComponent;
   late JupiterGravityRepellentComponent jupiterGravityRepellentComponent;
 
   late AsteroidAngleComponent asteroidAngleComponent;
 
-  late SatalliteComponent satalliteComponent;
+  late SatelliteComponent satelliteComponent;
 
   List<AsteroidComponent> asteroids = [];
-  List<SatalliteComponent> satallites = [];
+  List<SatelliteComponent> satellites = [];
+
+  int waveNumber = 100;
+
+  late WaveManager waveManager;
 
   final rnd = Random();
 
+  final paint = Paint();
+
+  Vector2? lineSegment;
+
   Vector2 randomVector2() => (-Vector2.random(rnd) - Vector2.random(rnd)) * 100;
+
+  List<Vector2> startingPoints = [
+    Vector2(136.0, 55.0),
+    Vector2(170.0, 55.0),
+    Vector2(175.0, 67.0),
+    Vector2(174.0, 81.0),
+    Vector2(170.0, 93.0),
+    Vector2(158.0, 98.0),
+    Vector2(140.0, 97.0),
+    Vector2(129.0, 89.0),
+    Vector2(124.0, 75.0),
+    Vector2(128.0, 58.0),
+  ];
 
   @override
   FutureOr<void> onLoad() {
     final viewfinder = Viewfinder();
 
-    sataTimer = Timer(1, onTick: () => launchSatallite(), repeat: true);
-    asteroidTimer = Timer(.5, onTick: () => spawnAsteroid(), repeat: true);
-    stopTimer = Timer(30, onTick: () => stopTimerFunc(), repeat: false);
+    // sateTimer = Timer(1, onTick: () => launchSatellite(), repeat: true);
+    // asteroidTimer = Timer(.5, onTick: () => spawnAsteroid(), repeat: true);
+    // stopTimer = Timer(30, onTick: () => stopTimerFunc(), repeat: false);
 
-    sataTimer.start();
-    asteroidTimer.start();
+    // sateTimer.start();
+    // asteroidTimer.start();
 
     jupiterComponent = JupiterComponent();
     jupiterGravityRepellentComponent = JupiterGravityRepellentComponent();
 
-    asteroidComponent = AsteroidComponent(damage: 101);
-    satalliteComponent = SatalliteComponent(totalHealth: 500);
+    // satelliteComponent = SatelliteComponent(totalHealth: 500);
 
     final jupiterGravityComponent = JupiterGravityComponent();
 
@@ -89,78 +116,128 @@ class PeskySatellites extends Forge2DGame
       ..anchor = Anchor.topLeft
       ..zoom = 10;
 
-    camera = CameraComponent(world: world, viewfinder: viewfinder);
+    camera = CameraComponent.withFixedResolution(
+      width: 1920.0,
+      height: 1027.0,
+      world: world,
+      viewfinder: viewfinder,
+    );
+
+    spawnAsteroids();
+
+    setUpWaves();
 
     world.addAll([
       jupiterComponent,
       jupiterGravityComponent,
       earth,
-      asteroidComponent,
       jupiterGravityRepellentComponent,
-      // satalliteComponent
     ]);
-    // final initialVec = Vector2(184, 75);
-    // for (var i = 0; i < 30; i++) {
-    //   print('adding');
-    //   final ast = AsteroidComponent(
-    //       newPosition: Vector2(initialVec.x - i, initialVec.y - i));
-    //   world.add(ast);
-    // }
 
     return super.onLoad();
   }
 
-  void launchSatallite() {
-    final sata = SatalliteComponent(totalHealth: 100);
-    world.add(sata);
+  void setUpWaves() {
+    waveManager = WaveManager(
+      waveNumber: waveNumber,
+      impulseTargets: [
+        Vector2(158.0, 40.0),
+        Vector2(155.0, 45.0),
+        Vector2(156.0, 50.0),
+        Vector2(155.0, 55.0),
+        Vector2(154.0, 60.0),
+        Vector2(145.0, 90.0),
+        Vector2(145.0, 95.0),
+        Vector2(140.0, 99.0),
+        Vector2(140.0, 100.0),
+        Vector2(130.0, 100.0),
+      ],
+    );
+    world.add(waveManager);
+  }
+
+  // void launchSatellite() {
+  //   final sate = SatelliteComponent(totalHealth: 100);
+  //   world.add(sate);
+  // }
+
+  // @override
+  // void update(double dt) {
+  //   // asteroidTimer.update(dt);
+  //   stopTimer.update(dt);
+  //   sateTimer.update(dt);
+  //   super.update(dt);
+  // }
+
+  void spawnAsteroids() {
+    for (var vec in startingPoints) {
+      final asteroid = AsteroidComponent(
+          startPosition: vec, startingDamage: smallDamage, priority: 3);
+      asteroids.add(asteroid);
+      world.add(asteroid);
+    }
+  }
+
+  // void stopTimerFunc() {
+  //   // asteroidTimer.stop();
+  //   sateTimer.stop();
+  // }
+
+  @override
+  void onMouseMove(PointerHoverInfo info) {
+    lineSegment = info.eventPosition.global;
+    super.onMouseMove(info);
   }
 
   @override
-  void update(double dt) {
-    asteroidTimer.update(dt);
-    stopTimer.update(dt);
-    sataTimer.update(dt);
-    super.update(dt);
+  void render(Canvas canvas) {
+    if (asteroids.isNotEmpty && lineSegment != null) {
+      drawDashedLine(
+          canvas: canvas,
+          p1: camera.localToGlobal(asteroids.first.body.worldCenter).toOffset(),
+          p2: lineSegment!.toOffset(),
+          paint: paint..color = Colors.amber,
+          pattern: [20, 30]);
+    }
+    super.render(canvas);
   }
 
-  void spawnAsteroid() {
-    world.add(AsteroidComponent(damage: 101));
+  Canvas drawDashedLine({
+    required Canvas canvas,
+    required Offset p1,
+    required Offset p2,
+    required Iterable<double> pattern,
+    required Paint paint,
+  }) {
+    assert(pattern.length.isEven);
+    final distance = (p2 - p1).distance;
+    final normalizedPattern = pattern.map((width) => width / distance).toList();
+    final points = <Offset>[];
+    double t = 0;
+    int i = 0;
+    while (t < 1) {
+      points.add(Offset.lerp(p1, p2, t)!);
+      t += normalizedPattern[i++]; // dashWidth
+      points.add(Offset.lerp(p1, p2, t.clamp(0, 1))!);
+      t += normalizedPattern[i++]; // dashSpace
+      i %= normalizedPattern.length;
+    }
+
+    canvas.drawPoints(PointMode.lines, points, paint);
+    return canvas;
   }
-
-  void stopTimerFunc() {
-    asteroidTimer.stop();
-    sataTimer.stop();
-  }
-
-  // @override
-  // Future<void> onTapDown(TapDownEvent event) async {
-  //   super.onTapDown(event);
-  //   targetPosition.setFrom(camera.globalToLocal(event.devicePosition));
-
-  //   if (asteroids.isNotEmpty) {
-  //     final asteroid = asteroids.first;
-  //     asteroids.removeWhere((e) => e == asteroid);
-  //     asteroid.body.clearForces();
-  //     asteroid.fireAsteroid();
-  //     // final newAsteroid = AsteroidComponent(
-  //     //     isFiring: true,
-  //     //     currentPosition: asteroid.position,
-  //     //     currentColor: asteroid.currentColor);
-  //     // world.remove(asteroid);
-  //     // world.add(newAsteroid);
-
-  //     // asteroid.body.applyForce(Vector2(-250, 250));
-  //   }
-  // }
 
   @override
   Future<void> onTapDown(TapDownEvent event) async {
     super.onTapDown(event);
     if (asteroids.isNotEmpty) {
-      targetPosition.setFrom(camera.globalToLocal(event.devicePosition));
+      targetPosition.setFrom(
+        camera.globalToLocal(event.devicePosition),
+      );
       final asteroid = asteroids.first;
       final newAsteroid = AsteroidComponent(
-        damage: asteroid.damage,
+        startPosition: Vector2.zero(),
+        startingDamage: asteroid.startingDamage,
         isFiring: true,
         newPosition: asteroid.position,
         currentColor: asteroid.currentColor,
@@ -171,13 +248,13 @@ class PeskySatellites extends Forge2DGame
     }
   }
 
-  void explodeSatallite(List<List<Vector2>> polyShapes, Vector2 position,
-      SatalliteComponent _component) async {
+  void explodeSatellite(List<List<Vector2>> polyShapes, Vector2 position,
+      SatelliteComponent _component) async {
     List<ParticleSystemComponent> particles = [];
     for (var shape in polyShapes) {
       List<Vector2> scaleList = [];
       for (var vector in shape) {
-        scaleList.add(vector * 25);
+        scaleList.add(vector * 15);
       }
       final explosionParticle = ParticleSystemComponent(
         position: camera.localToGlobal(position),

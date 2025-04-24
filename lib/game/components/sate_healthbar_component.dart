@@ -3,13 +3,13 @@
 import 'dart:async';
 
 import 'package:flame/components.dart';
-import 'package:flame_jam_2025/game/forge_components/satallite_component.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
 import 'package:flutter/material.dart';
 
-class SataHealthbarComponent extends PositionComponent {
-  SataHealthbarComponent({required this.satalliteComponent, super.position});
+class SateHealthbarComponent extends PositionComponent {
+  SateHealthbarComponent({required this.satelliteComponent, super.position});
 
-  final SatalliteComponent satalliteComponent;
+  final SatelliteComponent satelliteComponent;
 
   final double healthBarWidth = 1.0;
   final double healthBarHeight = 0.5;
@@ -23,9 +23,9 @@ class SataHealthbarComponent extends PositionComponent {
 
   @override
   FutureOr<void> onLoad() {
-    currentHealth = satalliteComponent.totalHealth;
-    totalHealth = satalliteComponent.totalHealth;
-    add(satalliteComponent);
+    currentHealth = satelliteComponent.totalHealth!;
+    totalHealth = satelliteComponent.totalHealth!;
+    add(satelliteComponent);
     return super.onLoad();
   }
 
