@@ -3,13 +3,17 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
-import 'package:flame_jam_2025/game/pesky_satellites.dart';
+import 'package:flame_jam_2025/game/sateflies_game.dart';
 
-class WaveManager extends Component with HasGameReference<PeskySatellites> {
+class WaveManager extends Component with HasGameReference<SatefliesGame> {
   WaveManager({
     required this.waveNumber,
     required this.impulseTargets,
   });
+
+  bool isBossWave = false;
+  bool isBossAdded = false;
+  bool isProbsRefreshed = false;
 
   final List<Vector2> impulseTargets;
   final int waveNumber;
@@ -38,6 +42,8 @@ class WaveManager extends Component with HasGameReference<PeskySatellites> {
 
   @override
   FutureOr<void> onLoad() {
+    isBossWave = (waveNumber % 10) == 0;
+
     spawnTimer = Timer(1, onTick: () => spawnSatellites(), repeat: true);
     spawnTimer.start();
 
@@ -63,13 +69,14 @@ class WaveManager extends Component with HasGameReference<PeskySatellites> {
 
   void onWaveComplete() {
     ++game.waveNumber;
+    isBossWave = (waveNumber % 10) == 0;
   }
 
-  int calculateTotalWavePower(int waveNumber) {
-    return 10 + (waveNumber * 5) + (waveNumber * waveNumber);
+  int calculateTotalWavePower() {
+    return (waveNumber * 1.5).round();
   }
 
-  Map<SatelliteDifficulty, double> getEnemyProbabilities(int waveNumber) {
+  Map<SatelliteDifficulty, double> getEnemyProbabilities() {
     // Initialize with base probabilities
     Map<SatelliteDifficulty, double> probabilities = {};
 
@@ -88,11 +95,12 @@ class WaveManager extends Component with HasGameReference<PeskySatellites> {
           probability = min(0.05 + (waveNumber * 0.02), 0.3);
           break;
         case SatelliteDifficulty.boss:
-          probability = min(0.05 + (waveNumber * 0.01), 0.1);
+          probability = (isBossWave && !isBossAdded) ? 1 : 0;
           break;
       }
       probabilities[type] = probability;
     }
+
     // Normalize probabilities to sum to 1.0
     double total = probabilities.values.reduce((a, b) => a + b);
     probabilities.forEach((key, value) {
@@ -104,25 +112,31 @@ class WaveManager extends Component with HasGameReference<PeskySatellites> {
 
   // Generate enemies for the current wave
   List<SatelliteComponent> generateWaveEnemies() {
-    int totalPower = calculateTotalWavePower(waveNumber);
-    Map<SatelliteDifficulty, double> probabilities =
-        getEnemyProbabilities(waveNumber);
+    int totalPower = calculateTotalWavePower();
+    Map<SatelliteDifficulty, double> probabilities = getEnemyProbabilities();
 
     int remainingPower = totalPower;
     while (remainingPower > 0) {
-      // Select enemy type using probability distribution
+      if (isBossAdded && !isProbsRefreshed) {
+        probabilities = getEnemyProbabilities();
+        isProbsRefreshed = true;
+      }
+
       SatelliteDifficulty selectedType = _selectEnemyType(probabilities, rnd);
 
-      // Get power level for this enemy type
-      int powerLevel = _getPowerLevelForType(selectedType);
+      final powerLevel = _getPowerLevelForType(selectedType);
 
-      // Add enemy if it fits in remaining power budget
+      if (isBossWave && !isBossAdded) {
+        enemies.add(createEnemy(SatelliteDifficulty.boss));
+        remainingPower -= powerLevel;
+        isBossAdded = true;
+      }
+
       if (powerLevel <= remainingPower) {
         enemies.add(createEnemy(selectedType));
         remainingPower -= powerLevel;
       } else {
-        // If remaining power is too low, try to add the lowest power enemy
-        SatelliteDifficulty lowestType = _getLowestPowerEnemyType();
+        final lowestType = _getLowestPowerEnemyType();
         int lowestPower = _getPowerLevelForType(lowestType);
 
         if (lowestPower <= remainingPower) {
@@ -132,8 +146,7 @@ class WaveManager extends Component with HasGameReference<PeskySatellites> {
       }
     }
     pendingSpawn = List.from(enemies);
-    print(
-        'Enemies length: ${enemies.length} and Pending Spawn Length: ${pendingSpawn.length}');
+
     return enemies;
   }
 

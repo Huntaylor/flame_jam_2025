@@ -4,10 +4,10 @@ import 'package:flame/components.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroid_component.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
-import 'package:flame_jam_2025/game/pesky_satellites.dart';
+import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
 
-class JupiterGravityRepellentComponent extends BodyComponent<PeskySatellites>
+class JupiterGravityRepellentComponent extends BodyComponent<SatefliesGame>
     with ContactCallbacks {
   JupiterGravityRepellentComponent({super.priority})
       : super(
@@ -29,6 +29,7 @@ class JupiterGravityRepellentComponent extends BodyComponent<PeskySatellites>
       other.isOrbiting = false;
       asteroids.add(other);
     } else if (other is SatelliteComponent) {
+      other.isOrbiting = false;
       satellites.add(other);
     }
     super.beginContact(other, contact);
@@ -45,8 +46,11 @@ class JupiterGravityRepellentComponent extends BodyComponent<PeskySatellites>
 
         asteroids.remove(asteroidBody);
       }
-      super.endContact(other, contact);
+    } else if (other is SatelliteComponent) {
+      other.isOrbiting = true;
+      satellites.remove(other);
     }
+    super.endContact(other, contact);
   }
 
   @override

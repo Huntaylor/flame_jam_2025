@@ -1,5 +1,5 @@
 import 'package:flame/game.dart';
-import 'package:flame_jam_2025/game/pesky_satellites.dart';
+import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -13,8 +13,8 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: GameWidget<PeskySatellites>.controlled(
-          gameFactory: () => PeskySatellites(),
+        body: GameWidget<SatefliesGame>.controlled(
+          gameFactory: () => SatefliesGame(),
         ),
       ),
     );

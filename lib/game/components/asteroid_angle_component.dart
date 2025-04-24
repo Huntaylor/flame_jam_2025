@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flame/components.dart';
-import 'package:flame_jam_2025/game/pesky_satellites.dart';
+import 'package:flame_jam_2025/game/sateflies_game.dart';
 
 class AsteroidAngleComponent extends RectangleComponent
-    with HasGameReference<PeskySatellites> {
+    with HasGameReference<SatefliesGame> {
   AsteroidAngleComponent({super.anchor, super.angle})
       : super(size: Vector2(2, 1));
 

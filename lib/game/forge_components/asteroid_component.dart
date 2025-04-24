@@ -2,10 +2,10 @@ import 'dart:math';
 
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
-import 'package:flame_jam_2025/game/pesky_satellites.dart';
+import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
 
-class AsteroidComponent extends BodyComponent<PeskySatellites>
+class AsteroidComponent extends BodyComponent<SatefliesGame>
     with ContactCallbacks {
   AsteroidComponent({
     super.priority,

@@ -1,7 +1,7 @@
 import 'package:flame_forge2d/flame_forge2d.dart';
-import 'package:flame_jam_2025/game/pesky_satellites.dart';
+import 'package:flame_jam_2025/game/sateflies_game.dart';
 
-class JupiterComponent extends BodyComponent<PeskySatellites>
+class JupiterComponent extends BodyComponent<SatefliesGame>
     with ContactCallbacks {
   JupiterComponent({super.priority});
 

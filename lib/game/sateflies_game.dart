@@ -16,13 +16,9 @@ import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
 import 'package:flame_jam_2025/game/managers/wave_manager.dart';
 import 'package:flutter/material.dart';
 
-class PeskySatellites extends Forge2DGame
-    with
-        HasCollisionDetection,
-        TapCallbacks,
-        MouseMovementDetector,
-        DragCallbacks {
-  PeskySatellites() : super(gravity: Vector2(0, 0)) {
+class SatefliesGame extends Forge2DGame
+    with HasCollisionDetection, TapCallbacks, MouseMovementDetector {
+  SatefliesGame() : super(gravity: Vector2(0, 0)) {
     jupiterSize = 9;
     earthSize = (jupiterSize / 11);
     earthPosition = Vector2.all(15);
@@ -63,7 +59,7 @@ class PeskySatellites extends Forge2DGame
   List<AsteroidComponent> asteroids = [];
   List<SatelliteComponent> satellites = [];
 
-  int waveNumber = 1;
+  int waveNumber = 10;
 
   late WaveManager waveManager;
 
@@ -121,6 +117,7 @@ class PeskySatellites extends Forge2DGame
       height: 1027.0,
       world: world,
       viewfinder: viewfinder,
+      hudComponents: [FpsTextComponent()],
     );
 
     spawnAsteroids();

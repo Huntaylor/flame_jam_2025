@@ -2,12 +2,13 @@ import 'dart:math';
 
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroid_component.dart';
-import 'package:flame_jam_2025/game/pesky_satellites.dart';
+import 'package:flame_jam_2025/game/forge_components/jupiter_gravity_component.dart';
+import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
 
 enum SatelliteDifficulty { easy, medium, hard, boss }
 
-class SatelliteComponent extends BodyComponent<PeskySatellites>
+class SatelliteComponent extends BodyComponent<SatefliesGame>
     with ContactCallbacks {
   SatelliteComponent({
     super.priority,
@@ -56,6 +57,8 @@ class SatelliteComponent extends BodyComponent<PeskySatellites>
   late AsteroidComponent contactAsteroid;
 
   bool isTooLate = false;
+  bool isOrbiting = false;
+  bool launchOrbit = false;
 
   final double healthBarWidth = 1.5;
   final double healthBarHeight = 0.5;
@@ -101,7 +104,6 @@ class SatelliteComponent extends BodyComponent<PeskySatellites>
 
   void setUpSatellite() {
     currentHealth = totalHealth!;
-    print(currentHealth);
   }
 
   void takeDamage(double damage) {
@@ -111,6 +113,15 @@ class SatelliteComponent extends BodyComponent<PeskySatellites>
         destroySatellite();
       }
     }
+  }
+
+  @override
+  void beginContact(Object other, Contact contact) {
+    if (other is JupiterGravityComponent && !launchOrbit) {
+      body.applyLinearImpulse(Vector2(2, -1));
+      launchOrbit = true;
+    }
+    super.beginContact(other, contact);
   }
 
   void destroySatellite() {

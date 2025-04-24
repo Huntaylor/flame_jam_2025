@@ -4,10 +4,10 @@ import 'package:flame/components.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroid_component.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
-import 'package:flame_jam_2025/game/pesky_satellites.dart';
+import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
 
-class JupiterGravityComponent extends BodyComponent<PeskySatellites>
+class JupiterGravityComponent extends BodyComponent<SatefliesGame>
     with ContactCallbacks {
   JupiterGravityComponent({super.priority})
       : super(
@@ -26,6 +26,8 @@ class JupiterGravityComponent extends BodyComponent<PeskySatellites>
   void beginContact(Object other, Contact contact) {
     if (other is SatelliteComponent) {
       if (other.currentHealth > 0) {
+        other.isOrbiting = true;
+
         other.isTooLate = true;
         game.satellites.add(other);
       } else {
@@ -42,7 +44,7 @@ class JupiterGravityComponent extends BodyComponent<PeskySatellites>
   void update(double dt) {
     if (game.satellites.isNotEmpty) {
       for (var satellite in game.satellites) {
-        if (satellite.isTooLate) {
+        if (satellite.isTooLate && satellite.isOrbiting) {
           final jupiterPosition = game.jupiterPosition.clone();
           Vector2 gravityDirection = jupiterPosition
             ..sub(satellite.body.worldCenter);
@@ -105,7 +107,7 @@ class JupiterGravityComponent extends BodyComponent<PeskySatellites>
             );
           } else {
             asteroid.body.applyForce(
-              gravityDirection / 8,
+              gravityDirection / 12,
               point: asteroid.body.worldCenter,
             );
           }
