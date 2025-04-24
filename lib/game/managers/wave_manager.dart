@@ -24,10 +24,13 @@ class WaveManager extends Component with HasGameReference<PeskySatellites> {
 
   late SatelliteComponent bossSatellite;
 
-  List<SatelliteComponent> difficultyList = [];
+  List<SatelliteDifficulty> difficultyList = [];
 
-  List<SatelliteComponent> waveEnemies = [];
+  List<SatelliteComponent> enemies = [];
+
   List<SatelliteComponent> pendingSpawn = [];
+
+  int index = 0;
 
   final rnd = Random();
 
@@ -37,19 +40,15 @@ class WaveManager extends Component with HasGameReference<PeskySatellites> {
   FutureOr<void> onLoad() {
     spawnTimer = Timer(1, onTick: () => spawnSatellites(), repeat: true);
     spawnTimer.start();
-    easySatellite = SatelliteComponent(difficulty: SatelliteDifficulty.easy);
-    mediumSatellite =
-        SatelliteComponent(difficulty: SatelliteDifficulty.medium);
-    hardSatellite = SatelliteComponent(difficulty: SatelliteDifficulty.hard);
-    bossSatellite = SatelliteComponent(difficulty: SatelliteDifficulty.boss);
+
     difficultyList.addAll([
-      easySatellite,
-      mediumSatellite,
-      hardSatellite,
-      bossSatellite,
+      SatelliteDifficulty.easy,
+      SatelliteDifficulty.medium,
+      SatelliteDifficulty.hard,
+      SatelliteDifficulty.boss,
     ]);
 
-    generateWave();
+    generateWaveEnemies();
 
     return super.onLoad();
   }
@@ -66,58 +65,140 @@ class WaveManager extends Component with HasGameReference<PeskySatellites> {
     ++game.waveNumber;
   }
 
-  int getPowerForWave() {
-    return (10 + waveNumber * 5); // Scale as needed
+  int calculateTotalWavePower(int waveNumber) {
+    return 10 + (waveNumber * 5) + (waveNumber * waveNumber);
   }
 
-  //Only spawning 4 because the list I have only has 4 within the list, duh
-  //Need to set this up to generate the list, based on the enemy chance
-  List<SatelliteComponent> getWeightedEnemyPool() {
-    // Increase difficulty by making tougher enemies more likely
-    double difficultyFactor = waveNumber * 0.05;
-    List<SatelliteComponent> newList = [];
-    for (var satellite in difficultyList) {
-      double adjustedChance =
-          (satellite.spawnChance! + (satellite.powerLevel! * difficultyFactor))
-              .clamp(0.0, 1.0);
-      int weight = (adjustedChance * 100).toInt();
+  Map<SatelliteDifficulty, double> getEnemyProbabilities(int waveNumber) {
+    // Initialize with base probabilities
+    Map<SatelliteDifficulty, double> probabilities = {};
 
-      newList.add(satellite..spawnChance = weight.toDouble());
+    // Example probability calculation
+    // Adjust these formulas based on your preferred difficulty curve
+    for (var type in difficultyList) {
+      double? probability;
+      switch (type) {
+        case SatelliteDifficulty.easy:
+          probability = max(0.8 - (waveNumber * 0.05), 0.2);
+          break;
+        case SatelliteDifficulty.medium:
+          probability = min(0.1 + (waveNumber * 0.03), 0.4);
+          break;
+        case SatelliteDifficulty.hard:
+          probability = min(0.05 + (waveNumber * 0.02), 0.3);
+          break;
+        case SatelliteDifficulty.boss:
+          probability = min(0.05 + (waveNumber * 0.01), 0.1);
+          break;
+      }
+      probabilities[type] = probability;
     }
+    // Normalize probabilities to sum to 1.0
+    double total = probabilities.values.reduce((a, b) => a + b);
+    probabilities.forEach((key, value) {
+      probabilities[key] = value / total;
+    });
 
-    return newList;
+    return probabilities;
   }
 
-  void generateWave() {
-    int wavePower = getPowerForWave();
+  // Generate enemies for the current wave
+  List<SatelliteComponent> generateWaveEnemies() {
+    int totalPower = calculateTotalWavePower(waveNumber);
+    Map<SatelliteDifficulty, double> probabilities =
+        getEnemyProbabilities(waveNumber);
 
-    List<SatelliteComponent> weightedPool = getWeightedEnemyPool();
+    int remainingPower = totalPower;
+    while (remainingPower > 0) {
+      // Select enemy type using probability distribution
+      SatelliteDifficulty selectedType = _selectEnemyType(probabilities, rnd);
 
-    int currentPower = 0;
+      // Get power level for this enemy type
+      int powerLevel = _getPowerLevelForType(selectedType);
 
-    while (currentPower < wavePower && weightedPool.isNotEmpty) {
-      SatelliteComponent satelliteComponent = (weightedPool..shuffle()).first;
-      if (currentPower + satelliteComponent.powerLevel! <= wavePower) {
-        satelliteComponent.setImpulseTarget =
-            impulseTargets[rnd.nextInt((impulseTargets.length - 1))];
-        waveEnemies.add(satelliteComponent);
-        currentPower += satelliteComponent.powerLevel!.toInt();
+      // Add enemy if it fits in remaining power budget
+      if (powerLevel <= remainingPower) {
+        enemies.add(createEnemy(selectedType));
+        remainingPower -= powerLevel;
       } else {
-        // Prevent infinite loop if remaining power is too small
-        weightedPool
-            .removeWhere((e) => e.powerLevel! > (wavePower - currentPower));
+        // If remaining power is too low, try to add the lowest power enemy
+        SatelliteDifficulty lowestType = _getLowestPowerEnemyType();
+        int lowestPower = _getPowerLevelForType(lowestType);
+
+        if (lowestPower <= remainingPower) {
+          enemies.add(createEnemy(lowestType));
+        }
+        break;
       }
     }
-    pendingSpawn = waveEnemies;
+    pendingSpawn = List.from(enemies);
+    print(
+        'Enemies length: ${enemies.length} and Pending Spawn Length: ${pendingSpawn.length}');
+    return enemies;
+  }
+
+  // Helper to select enemy type based on probability distribution
+  SatelliteDifficulty _selectEnemyType(
+      Map<SatelliteDifficulty, double> probabilities, Random random) {
+    double roll = random.nextDouble();
+    double cumulativeProbability = 0.0;
+
+    for (var entry in probabilities.entries) {
+      cumulativeProbability += entry.value;
+      if (roll <= cumulativeProbability) {
+        return entry.key;
+      }
+    }
+
+    // Fallback to first enemy type (should never reach here if probabilities sum to 1.0)
+    return difficultyList.first;
+  }
+
+  // Helper to find lowest power enemy type
+  SatelliteDifficulty _getLowestPowerEnemyType() {
+    SatelliteDifficulty lowestType = difficultyList.first;
+    int lowestPower = _getPowerLevelForType(lowestType);
+
+    for (var type in difficultyList) {
+      int power = _getPowerLevelForType(type);
+      if (power < lowestPower) {
+        lowestType = type;
+        lowestPower = power;
+      }
+    }
+
+    return lowestType;
+  }
+
+  // Helper to get power level for an enemy type
+  int _getPowerLevelForType(SatelliteDifficulty type) {
+    // Replace with your actual way of getting power levels
+    switch (type) {
+      case SatelliteDifficulty.easy:
+        return 1;
+      case SatelliteDifficulty.medium:
+        return 3;
+      case SatelliteDifficulty.hard:
+        return 5;
+      case SatelliteDifficulty.boss:
+        return 10;
+    }
+  }
+
+  // Factory method to create enemy components
+  SatelliteComponent createEnemy(SatelliteDifficulty type) {
+    // Replace this with your actual enemy creation logic
+    return SatelliteComponent(difficulty: type)
+      ..setImpulseTarget = impulseTargets[rnd.nextInt(
+        (impulseTargets.length - 1),
+      )];
   }
 
   void spawnSatellites() {
-    if (pendingSpawn.isNotEmpty) {
-      SatelliteComponent? currentSatellite = pendingSpawn.first;
+    if (index < pendingSpawn.length) {
+      final currentSatellite = pendingSpawn[index];
+      ++index;
       game.world.add(currentSatellite);
-      pendingSpawn.removeWhere((e) => currentSatellite == e);
-    } else {
-      spawnTimer.stop();
     }
   }
 }

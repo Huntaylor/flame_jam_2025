@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroid_component.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
 import 'package:flame_jam_2025/game/pesky_satellites.dart';
 import 'package:flutter/material.dart';
 
@@ -17,12 +18,18 @@ class JupiterGravityRepellentComponent extends BodyComponent<PeskySatellites>
         );
 
   List<AsteroidComponent> asteroids = [];
+  List<SatelliteComponent> satellites = [];
+
+  final double jupiterGravity = 24.79;
+  final double jupiterMass = 254.0;
 
   @override
   void beginContact(Object other, Contact contact) {
     if (other is AsteroidComponent) {
       other.isOrbiting = false;
       asteroids.add(other);
+    } else if (other is SatelliteComponent) {
+      satellites.add(other);
     }
     super.beginContact(other, contact);
   }
@@ -55,8 +62,7 @@ class JupiterGravityRepellentComponent extends BodyComponent<PeskySatellites>
           final distance = asteroid.body.worldCenter.distanceTo(
             jupiterPosition,
           );
-          final double jupiterGravity = 24.79;
-          final double jupiterMass = 254.0;
+
           final gravity = (jupiterGravity *
               (asteroid.body.getMassData().mass *
                   jupiterMass %
@@ -70,7 +76,29 @@ class JupiterGravityRepellentComponent extends BodyComponent<PeskySatellites>
         }
       }
     }
+    if (satellites.isNotEmpty) {
+      for (var satellite in satellites) {
+        final jupiterPosition = game.jupiterPosition.clone();
 
+        Vector2 gravityDirection = jupiterPosition
+          ..sub(satellite.body.worldCenter);
+
+        final distance = satellite.body.worldCenter.distanceTo(
+          jupiterPosition,
+        );
+
+        final gravity = (jupiterGravity *
+            (satellite.body.getMassData().mass *
+                jupiterMass %
+                pow(distance, 2)));
+        gravityDirection.scaleTo(gravity * dt);
+        //need to add in a normalizer
+        satellite.body.applyForce(
+          (gravityDirection / 10).inverted(),
+          point: satellite.body.worldCenter,
+        );
+      }
+    }
     super.update(dt);
   }
 

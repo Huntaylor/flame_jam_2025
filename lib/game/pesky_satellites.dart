@@ -63,7 +63,7 @@ class PeskySatellites extends Forge2DGame
   List<AsteroidComponent> asteroids = [];
   List<SatelliteComponent> satellites = [];
 
-  int waveNumber = 100;
+  int waveNumber = 1;
 
   late WaveManager waveManager;
 
