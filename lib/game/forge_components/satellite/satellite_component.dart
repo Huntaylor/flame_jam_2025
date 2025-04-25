@@ -1,15 +1,20 @@
 import 'dart:math';
 
 import 'package:flame_forge2d/flame_forge2d.dart';
-import 'package:flame_jam_2025/game/forge_components/asteroid_component.dart';
+import 'package:flame_behaviors/flame_behaviors.dart';
+
+import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/forge_components/jupiter_gravity_component.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite/behaviors/satellite_controller_behavior.dart';
 import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
+
+enum SatelliteState { destroyed, alive, orbiting, repelling }
 
 enum SatelliteDifficulty { easy, medium, hard, boss }
 
 class SatelliteComponent extends BodyComponent<SatefliesGame>
-    with ContactCallbacks {
+    with ContactCallbacks, EntityMixin {
   SatelliteComponent({
     super.priority,
     required this.difficulty,
@@ -34,6 +39,19 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
     }
   }
 
+  SatelliteState? _satelliteState;
+
+  bool get isAlive => state == SatelliteState.alive;
+  bool get isDestroyed => state == SatelliteState.destroyed;
+  bool get isOrbiting => state == SatelliteState.orbiting;
+  bool get isRepelling => state == SatelliteState.repelling;
+
+  SatelliteState get state => _satelliteState ?? SatelliteState.alive;
+
+  set state(SatelliteState state) {
+    _satelliteState = state;
+  }
+
   //Max 100 components - Max 30 asteroids
   // 70 Satellites max
 
@@ -48,8 +66,6 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
 
   Vector2? _impulseTarget;
 
-  bool isAlive = true;
-
   double? totalHealth;
   double? powerLevel;
   double? spawnChance;
@@ -57,7 +73,6 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
   late AsteroidComponent contactAsteroid;
 
   bool isTooLate = false;
-  bool isOrbiting = false;
   bool launchOrbit = false;
 
   final double healthBarWidth = 1.5;
@@ -95,8 +110,12 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
 
   set setImpulseTarget(Vector2 target) => _impulseTarget = target;
 
+  late final SatelliteControllerBehavior controllerBehavior =
+      findBehavior<SatelliteControllerBehavior>();
+
   @override
   Future<void> onLoad() {
+    addBehaviors();
     setUpSatellite();
 
     return super.onLoad();
@@ -106,27 +125,15 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
     currentHealth = totalHealth!;
   }
 
-  void takeDamage(double damage) {
-    if (!isTooLate) {
-      currentHealth = currentHealth - damage;
-      if (currentHealth <= 0 && isAlive) {
-        destroySatellite();
-      }
-    }
-  }
-
   @override
   void beginContact(Object other, Contact contact) {
     if (other is JupiterGravityComponent && !launchOrbit) {
       body.applyLinearImpulse(Vector2(2, -1));
+      state = SatelliteState.orbiting;
       launchOrbit = true;
+      game.waveSatellites.remove(this);
     }
     super.beginContact(other, contact);
-  }
-
-  void destroySatellite() {
-    isAlive = false;
-    game.explodeSatellite(polyShapes, position, this);
   }
 
   @override
@@ -185,5 +192,13 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
     body.applyLinearImpulse(fireVel);
 
     return body;
+  }
+
+  void addBehaviors() {
+    addAll(
+      [
+        SatelliteControllerBehavior(),
+      ],
+    );
   }
 }

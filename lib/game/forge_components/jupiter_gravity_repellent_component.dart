@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
-import 'package:flame_jam_2025/game/forge_components/asteroid_component.dart';
-import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
+import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
 
@@ -26,10 +26,10 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatefliesGame>
   @override
   void beginContact(Object other, Contact contact) {
     if (other is AsteroidComponent) {
-      other.isOrbiting = false;
       asteroids.add(other);
+      other.shouldRepel = true;
     } else if (other is SatelliteComponent) {
-      other.isOrbiting = false;
+      other.state = SatelliteState.repelling;
       satellites.add(other);
     }
     super.beginContact(other, contact);
@@ -39,7 +39,7 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatefliesGame>
   void endContact(Object other, Contact contact) {
     if (other is AsteroidComponent) {
       if (asteroids.isNotEmpty) {
-        other.isOrbiting = true;
+        other.shouldRepel = false;
         final asteroidBody = asteroids.firstWhere(
           (i) => i.body == contact.getOtherBody(body),
         );
@@ -47,7 +47,7 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatefliesGame>
         asteroids.remove(asteroidBody);
       }
     } else if (other is SatelliteComponent) {
-      other.isOrbiting = true;
+      other.state = SatelliteState.orbiting;
       satellites.remove(other);
     }
     super.endContact(other, contact);
@@ -55,9 +55,10 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatefliesGame>
 
   @override
   void update(double dt) {
+    // ASTEROIDS
     if (asteroids.isNotEmpty) {
       for (var asteroid in asteroids) {
-        if (!asteroid.isOrbiting! && !asteroid.isFiring!) {
+        if (asteroid.isOrbiting && asteroid.shouldRepel) {
           final jupiterPosition = game.jupiterPosition.clone();
 
           Vector2 gravityDirection = jupiterPosition
@@ -71,6 +72,7 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatefliesGame>
               (asteroid.body.getMassData().mass *
                   jupiterMass %
                   pow(distance, 2)));
+
           gravityDirection.scaleTo(gravity * dt);
 
           asteroid.body.applyForce(
@@ -80,6 +82,7 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatefliesGame>
         }
       }
     }
+    // SATELLITES
     if (satellites.isNotEmpty) {
       for (var satellite in satellites) {
         final jupiterPosition = game.jupiterPosition.clone();

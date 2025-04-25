@@ -1,30 +1,47 @@
 import 'dart:math';
 
+import 'package:flame_behaviors/flame_behaviors.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
-import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
+import 'package:flame_jam_2025/game/forge_components/asteroids/behaviors/asteroid_controller_behavior.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
 
+enum AsteroidState { firing, orbitingJupiter, spawned, destroyed }
+
 class AsteroidComponent extends BodyComponent<SatefliesGame>
-    with ContactCallbacks {
+    with ContactCallbacks, EntityMixin {
   AsteroidComponent({
     super.priority,
-    this.isOrbiting,
-    this.isFiring,
     this.currentColor,
     this.newPosition,
+    this.impulseDirection,
     required this.startPosition,
     required this.startingDamage,
-  }) {
-    isOrbiting = false;
-    isFiring = isFiring ?? false;
+  });
+
+  AsteroidState? _asteroidState;
+
+  bool get isOrbiting => state == AsteroidState.orbitingJupiter;
+  bool get isFiring => state == AsteroidState.firing;
+  bool get isSpawned => state == AsteroidState.spawned;
+  bool get isDestroyed => state == AsteroidState.destroyed;
+
+  AsteroidState get state => _asteroidState ?? AsteroidState.spawned;
+
+  set state(AsteroidState state) {
+    _asteroidState = state;
   }
+
+  late final AsteroidControllerBehavior controllerBehavior =
+      findBehavior<AsteroidControllerBehavior>();
+
+  late AsteroidState asteroidState;
+
+  final Vector2? impulseDirection;
   final Vector2? newPosition;
   final Vector2 startPosition;
-  late bool? isOrbiting;
-  late bool? isFiring;
   late Color? currentColor;
-  SatelliteComponent? sate;
 
   late Vector2 fireVel;
 
@@ -32,8 +49,12 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
 
   late double currentDamage;
 
-  bool isSensor = true;
+  SatelliteComponent? sate;
   bool dealtDamage = false;
+
+  bool isSensor = true;
+
+  bool shouldRepel = false;
 
   late FixtureDef fixtureDefCircle;
   late FixtureDef fixtureDefRect;
@@ -42,7 +63,36 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
   Random random = Random();
 
   @override
+  void beginContact(Object other, Contact contact) {
+    if (other is SatelliteComponent && isFiring) {
+      if (sate != null && other != sate) {
+        sate = other;
+        dealtDamage = true;
+        if (other.currentHealth >= currentDamage) {
+          other.controllerBehavior.takeDamage(currentDamage);
+          controllerBehavior.explodeAsteroid(position, this);
+        } else {
+          other.controllerBehavior.takeDamage(currentDamage);
+        }
+      } else if (!dealtDamage) {
+        sate = other;
+        dealtDamage = true;
+        if (other.currentHealth >= currentDamage) {
+          other.controllerBehavior.takeDamage(currentDamage);
+          controllerBehavior.explodeAsteroid(position, this);
+        } else {
+          currentDamage = currentDamage - other.currentHealth;
+          other.controllerBehavior.takeDamage(currentDamage);
+        }
+      }
+    }
+    super.beginContact(other, contact);
+  }
+
+  @override
   Future<void> onLoad() {
+    addBehaviors();
+
     currentDamage = startingDamage;
     Color chosenColor;
     turningDirection = random.nextDouble() * 0.1;
@@ -63,7 +113,7 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
 
   @override
   void update(double dt) {
-    if (isFiring!) {
+    if (isFiring) {
       body.setTransform(
         position,
         angle + turningDirection,
@@ -73,37 +123,11 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
   }
 
   @override
-  void beginContact(Object other, Contact contact) {
-    if (other is SatelliteComponent && !other.isTooLate) {
-      if (sate != null && other != sate) {
-        sate = other;
-        dealtDamage = true;
-        if (other.currentHealth >= currentDamage) {
-          other.takeDamage(currentDamage);
-          game.explodeAsteroid(position, this);
-        } else {
-          other.takeDamage(currentDamage);
-        }
-      } else if (!dealtDamage) {
-        sate = other;
-        dealtDamage = true;
-        if (other.currentHealth >= currentDamage) {
-          other.takeDamage(currentDamage);
-          game.explodeAsteroid(position, this);
-        } else {
-          currentDamage = currentDamage - other.currentHealth;
-          other.takeDamage(currentDamage);
-        }
-      }
-    }
-    super.beginContact(other, contact);
-  }
-
-  @override
   Body createBody() {
-    final _currentPosition = isFiring! ? newPosition : startPosition;
+    final _currentPosition = isFiring ? newPosition : startPosition;
     final def = BodyDef(
       userData: this,
+      // bullet: true,
       isAwake: true,
       type: BodyType.dynamic,
       position: _currentPosition,
@@ -129,7 +153,7 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
     body.synchronizeFixtures();
     body.setMassData(MassData()..mass = 1.2);
 
-    if (isFiring ?? false) {
+    if (isFiring) {
       var speed = 50;
       var velocityX = game.targetPosition.x - body.position.x;
 
@@ -144,9 +168,17 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
 
       body.applyLinearImpulse(fireVel);
     } else {
-      body.applyLinearImpulse(game.asteroidAngle);
+      body.applyLinearImpulse(impulseDirection ?? game.asteroidAngle);
     }
 
     return body;
+  }
+
+  void addBehaviors() {
+    addAll(
+      [
+        AsteroidControllerBehavior(),
+      ],
+    );
   }
 }

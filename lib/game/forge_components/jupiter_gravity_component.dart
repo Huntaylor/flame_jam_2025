@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
-import 'package:flame_jam_2025/game/forge_components/asteroid_component.dart';
-import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
+import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
 
@@ -26,24 +26,29 @@ class JupiterGravityComponent extends BodyComponent<SatefliesGame>
   void beginContact(Object other, Contact contact) {
     if (other is SatelliteComponent) {
       if (other.currentHealth > 0) {
-        other.isOrbiting = true;
+        other.state = SatelliteState.orbiting;
 
         other.isTooLate = true;
-        game.satellites.add(other);
+        game.orbitingSatellites.add(other);
       } else {
-        other.destroySatellite();
+        other.controllerBehavior.destroySatellite();
       }
-    } else if (other is AsteroidComponent && !(other.isFiring ?? false)) {
-      other.isOrbiting = true;
-      game.asteroids.add(other);
+    } else if (other is AsteroidComponent &&
+        other.state != AsteroidState.firing) {
+      other.state = AsteroidState.orbitingJupiter;
+      if (!game.asteroids.contains(other)) {
+        // print('does not contain');
+        game.asteroids.add(other);
+      }
     }
     super.beginContact(other, contact);
   }
 
   @override
   void update(double dt) {
-    if (game.satellites.isNotEmpty) {
-      for (var satellite in game.satellites) {
+    // SATELLITES
+    if (game.orbitingSatellites.isNotEmpty) {
+      for (var satellite in game.orbitingSatellites) {
         if (satellite.isTooLate && satellite.isOrbiting) {
           final jupiterPosition = game.jupiterPosition.clone();
           Vector2 gravityDirection = jupiterPosition
@@ -77,10 +82,10 @@ class JupiterGravityComponent extends BodyComponent<SatefliesGame>
         }
       }
     }
-
+    // ASTEROIDS
     if (game.asteroids.isNotEmpty) {
       for (var asteroid in game.asteroids) {
-        if (asteroid.isOrbiting!) {
+        if (asteroid.isOrbiting && !asteroid.shouldRepel) {
           // Trying to set this in the onLoad will break the gravity? Doesn't go the same way?
           // Looks like it is staying like this
           final jupiterPosition = game.jupiterPosition.clone();
@@ -107,7 +112,7 @@ class JupiterGravityComponent extends BodyComponent<SatefliesGame>
             );
           } else {
             asteroid.body.applyForce(
-              gravityDirection / 12,
+              gravityDirection / 2,
               point: asteroid.body.worldCenter,
             );
           }

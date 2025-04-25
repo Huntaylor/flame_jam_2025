@@ -86,9 +86,9 @@ Color particleLayerColor1 = Colors.deepOrange[600]!;
 class FlameFire extends FlameGame
     with HasCollisionDetection, KeyboardEvents, TapDetector {
   FlameFire()
-    : super(
-        camera: CameraComponent.withFixedResolution(width: 576, height: 832),
-      );
+      : super(
+          camera: CameraComponent.withFixedResolution(width: 576, height: 832),
+        );
 
   double get width => size.x;
   double get height => size.y;
@@ -126,9 +126,9 @@ class FlameFire extends FlameGame
   Color backgroundColor() => Colors.white;
 }
 
-class Player extends CircleComponent with HasGameRef<FlameFire> {
+class Player extends CircleComponent with HasGameReference<FlameFire> {
   Player({super.position, super.priority = 3, super.anchor = Anchor.center})
-    : super();
+      : super();
 
   double fixedDeltaTime = 1 / 60;
   double accumulatedTime = 0;
@@ -252,27 +252,25 @@ class Player extends CircleComponent with HasGameRef<FlameFire> {
       particle: Particle.generate(
         count: 1,
         lifespan: .65,
-        generator:
-            (i) => AcceleratedParticle(
-              speed: speed,
-              child: ScalingParticle(
-                child: ComputedParticle(
-                  renderer: (canvas, particle) {
-                    canvas.drawCircle(
-                      Offset.zero,
-                      fireParticle.radius,
-                      Paint()
-                        ..color =
-                            Color.lerp(
-                              lerpColor1,
-                              lerpColor2,
-                              particle.progress,
-                            )!,
-                    );
-                  },
-                ),
-              ),
+        generator: (i) => AcceleratedParticle(
+          speed: speed,
+          child: ScalingParticle(
+            child: ComputedParticle(
+              renderer: (canvas, particle) {
+                canvas.drawCircle(
+                  Offset.zero,
+                  fireParticle.radius,
+                  Paint()
+                    ..color = Color.lerp(
+                      lerpColor1,
+                      lerpColor2,
+                      particle.progress,
+                    )!,
+                );
+              },
             ),
+          ),
+        ),
       ),
     );
   }
@@ -287,27 +285,25 @@ class Player extends CircleComponent with HasGameRef<FlameFire> {
       particle: Particle.generate(
         count: 1,
         lifespan: .65,
-        generator:
-            (i) => AcceleratedParticle(
-              speed: speed,
-              child: ScalingParticle(
-                child: ComputedParticle(
-                  renderer: (canvas, particle) {
-                    canvas.drawCircle(
-                      Offset.zero,
-                      fireParticle.radius,
-                      Paint()
-                        ..color =
-                            Color.lerp(
-                              particleLayerColor1,
-                              lerpColor1,
-                              particle.progress,
-                            )!,
-                    );
-                  },
-                ),
-              ),
+        generator: (i) => AcceleratedParticle(
+          speed: speed,
+          child: ScalingParticle(
+            child: ComputedParticle(
+              renderer: (canvas, particle) {
+                canvas.drawCircle(
+                  Offset.zero,
+                  fireParticle.radius,
+                  Paint()
+                    ..color = Color.lerp(
+                      particleLayerColor1,
+                      lerpColor1,
+                      particle.progress,
+                    )!,
+                );
+              },
             ),
+          ),
+        ),
       ),
     );
   }

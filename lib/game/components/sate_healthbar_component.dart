@@ -3,7 +3,7 @@
 import 'dart:async';
 
 import 'package:flame/components.dart';
-import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flutter/material.dart';
 
 class SateHealthbarComponent extends PositionComponent {

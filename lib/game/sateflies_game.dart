@@ -5,16 +5,18 @@ import 'dart:ui';
 import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flame/particles.dart' as parts;
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/components/asteroid_angle_component.dart';
-import 'package:flame_jam_2025/game/forge_components/asteroid_component.dart';
+import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/forge_components/jupiter_component.dart';
 import 'package:flame_jam_2025/game/forge_components/jupiter_gravity_component.dart';
 import 'package:flame_jam_2025/game/forge_components/jupiter_gravity_repellent_component.dart';
-import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
+import 'package:flame_jam_2025/game/managers/asteroid_spawn_manager.dart';
 import 'package:flame_jam_2025/game/managers/wave_manager.dart';
 import 'package:flutter/material.dart';
+
+enum GameState { waveStart, waveEnd }
 
 class SatefliesGame extends Forge2DGame
     with HasCollisionDetection, TapCallbacks, MouseMovementDetector {
@@ -46,6 +48,7 @@ class SatefliesGame extends Forge2DGame
   late Vector2 asteroidPosition;
   late Vector2 firingPosition;
   late Vector2 asteroidAngle;
+
   Vector2 targetPosition = Vector2.zero();
 
   late JupiterComponent jupiterComponent;
@@ -57,15 +60,26 @@ class SatefliesGame extends Forge2DGame
   late SatelliteComponent satelliteComponent;
 
   List<AsteroidComponent> asteroids = [];
-  List<SatelliteComponent> satellites = [];
+  List<SatelliteComponent> orbitingSatellites = [];
+  List<SatelliteComponent> waveSatellites = [];
 
-  int waveNumber = 10;
+  int waveNumber = 1;
 
   late WaveManager waveManager;
+  late AsteroidSpawnManager asteroidSpawnManager;
+
+  late TextComponent waveTextComponent;
+
+  late Timer waveTimer;
 
   final rnd = Random();
 
   final paint = Paint();
+
+  bool isGameStarted = false;
+  // bool isWaveOver = false;
+
+  String waveText = '';
 
   Vector2? lineSegment;
 
@@ -82,23 +96,27 @@ class SatefliesGame extends Forge2DGame
     Vector2(129.0, 89.0),
     Vector2(124.0, 75.0),
     Vector2(128.0, 58.0),
+    Vector2(128.0, 58.0),
+    Vector2(128.0, 58.0),
   ];
 
   @override
   FutureOr<void> onLoad() {
+    waveText = 'Wave $waveNumber';
+
+    waveTimer = Timer(
+      5,
+      onTick: () => waveManager.onWaveComplete(),
+      autoStart: false,
+      repeat: false,
+    );
+
+    isGameStarted = true;
     final viewfinder = Viewfinder();
 
-    // sateTimer = Timer(1, onTick: () => launchSatellite(), repeat: true);
-    // asteroidTimer = Timer(.5, onTick: () => spawnAsteroid(), repeat: true);
-    // stopTimer = Timer(30, onTick: () => stopTimerFunc(), repeat: false);
-
-    // sateTimer.start();
-    // asteroidTimer.start();
-
     jupiterComponent = JupiterComponent();
-    jupiterGravityRepellentComponent = JupiterGravityRepellentComponent();
 
-    // satelliteComponent = SatelliteComponent(totalHealth: 500);
+    jupiterGravityRepellentComponent = JupiterGravityRepellentComponent();
 
     final jupiterGravityComponent = JupiterGravityComponent();
 
@@ -106,6 +124,10 @@ class SatefliesGame extends Forge2DGame
       position: earthPosition,
       radius: earthSize,
       anchor: Anchor.center,
+    );
+
+    waveTextComponent = TextComponent(
+      text: waveText,
     );
 
     viewfinder
@@ -117,7 +139,10 @@ class SatefliesGame extends Forge2DGame
       height: 1027.0,
       world: world,
       viewfinder: viewfinder,
-      hudComponents: [FpsTextComponent()],
+      hudComponents: [
+        FpsTextComponent(),
+        waveTextComponent..position = Vector2(1920 / 2, 0),
+      ],
     );
 
     spawnAsteroids();
@@ -134,9 +159,28 @@ class SatefliesGame extends Forge2DGame
     return super.onLoad();
   }
 
+  @override
+  void update(double dt) {
+    if (waveTimer.isRunning()) {
+      waveTimer.update(dt);
+    }
+    if (isGameStarted) {
+      if (waveManager.initialAdded &&
+          waveManager.hasStarted &&
+          waveSatellites.isEmpty &&
+          !waveTimer.isRunning()) {
+        waveManager.initialAdded = false;
+        waveManager.state = WaveState.end;
+        waveTimer.start();
+      }
+    }
+    super.update(dt);
+  }
+
   void setUpWaves() {
+    asteroidSpawnManager = AsteroidSpawnManager();
+
     waveManager = WaveManager(
-      waveNumber: waveNumber,
       impulseTargets: [
         Vector2(158.0, 40.0),
         Vector2(155.0, 45.0),
@@ -150,35 +194,20 @@ class SatefliesGame extends Forge2DGame
         Vector2(130.0, 100.0),
       ],
     );
-    world.add(waveManager);
+    world.addAll([waveManager, asteroidSpawnManager]);
   }
-
-  // void launchSatellite() {
-  //   final sate = SatelliteComponent(totalHealth: 100);
-  //   world.add(sate);
-  // }
-
-  // @override
-  // void update(double dt) {
-  //   // asteroidTimer.update(dt);
-  //   stopTimer.update(dt);
-  //   sateTimer.update(dt);
-  //   super.update(dt);
-  // }
 
   void spawnAsteroids() {
     for (var vec in startingPoints) {
       final asteroid = AsteroidComponent(
-          startPosition: vec, startingDamage: smallDamage, priority: 3);
+        startPosition: vec,
+        startingDamage: smallDamage,
+        priority: 3,
+      );
       asteroids.add(asteroid);
       world.add(asteroid);
     }
   }
-
-  // void stopTimerFunc() {
-  //   // asteroidTimer.stop();
-  //   sateTimer.stop();
-  // }
 
   @override
   void onMouseMove(PointerHoverInfo info) {
@@ -188,13 +217,18 @@ class SatefliesGame extends Forge2DGame
 
   @override
   void render(Canvas canvas) {
-    if (asteroids.isNotEmpty && lineSegment != null) {
+    if (asteroids.isNotEmpty &&
+        lineSegment != null &&
+        asteroids.any((e) => e.isOrbiting)) {
+      final firstAsteroids = asteroids.firstWhere((e) => e.isOrbiting);
+
       drawDashedLine(
-          canvas: canvas,
-          p1: camera.localToGlobal(asteroids.first.body.worldCenter).toOffset(),
-          p2: lineSegment!.toOffset(),
-          paint: paint..color = Colors.amber,
-          pattern: [20, 30]);
+        canvas: canvas,
+        p1: camera.localToGlobal(firstAsteroids.body.worldCenter).toOffset(),
+        p2: lineSegment!.toOffset(),
+        paint: paint..color = Colors.amber,
+        pattern: [20, 30],
+      );
     }
     super.render(canvas);
   }
@@ -227,85 +261,21 @@ class SatefliesGame extends Forge2DGame
   @override
   Future<void> onTapDown(TapDownEvent event) async {
     super.onTapDown(event);
-    if (asteroids.isNotEmpty) {
+    if (asteroids.isNotEmpty && asteroids.any((e) => e.isOrbiting)) {
       targetPosition.setFrom(
         camera.globalToLocal(event.devicePosition),
       );
-      final asteroid = asteroids.first;
+      final asteroid = asteroids.firstWhere((e) => e.isOrbiting);
       final newAsteroid = AsteroidComponent(
         startPosition: Vector2.zero(),
         startingDamage: asteroid.startingDamage,
-        isFiring: true,
         newPosition: asteroid.position,
         currentColor: asteroid.currentColor,
       );
+      newAsteroid.state = AsteroidState.firing;
       asteroids.removeWhere((e) => e == asteroid);
       world.remove(asteroid);
       world.add(newAsteroid);
     }
-  }
-
-  void explodeSatellite(List<List<Vector2>> polyShapes, Vector2 position,
-      SatelliteComponent _component) async {
-    List<ParticleSystemComponent> particles = [];
-    for (var shape in polyShapes) {
-      List<Vector2> scaleList = [];
-      for (var vector in shape) {
-        scaleList.add(vector * 15);
-      }
-      final explosionParticle = ParticleSystemComponent(
-        position: camera.localToGlobal(position),
-        anchor: Anchor.center,
-        particle: parts.AcceleratedParticle(
-          lifespan: 1.5,
-          speed: randomVector2(),
-          child: parts.RotatingParticle(
-            to: pi,
-            child: parts.ScalingParticle(
-              to: 0,
-              child: parts.ComponentParticle(
-                component: PolygonComponent(scaleList)..setColor(Colors.red),
-              ),
-            ),
-          ),
-        ),
-      );
-      particles.add(explosionParticle);
-    }
-    addAll(particles);
-    world.remove(_component);
-  }
-
-  void explodeAsteroid(Vector2 position, AsteroidComponent _component) async {
-    final explosionParticle = ParticleSystemComponent(
-      position: camera.localToGlobal(position),
-      anchor: Anchor.center,
-      particle: parts.Particle.generate(
-        count: rnd.nextInt(10) + 5,
-        generator: (i) => parts.AcceleratedParticle(
-          lifespan: 1.5,
-          speed: randomVector2(),
-          child: parts.ScalingParticle(
-            to: 0,
-            child: parts.ComputedParticle(
-              renderer: (canvas, particle) {
-                canvas.drawCircle(
-                  Offset.zero,
-                  5,
-                  Paint()
-                    ..color = Color.lerp(
-                      _component.currentColor,
-                      const Color.fromARGB(255, 255, 0, 0),
-                      particle.progress,
-                    )!,
-                );
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-    add(explosionParticle);
-    world.remove(_component);
   }
 }

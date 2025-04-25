@@ -16,3 +16,5 @@ fpg: flutter pub get
 spider init: spider create --add-in-pubspec
 
 sbuild: spider build
+
+webbuild: flutter build web --release --wasm

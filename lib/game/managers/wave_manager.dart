@@ -2,23 +2,57 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flame/components.dart';
-import 'package:flame_jam_2025/game/forge_components/satellite_component.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/sateflies_game.dart';
+
+enum WaveType {
+  boss,
+  tutorial,
+  medium,
+  hard,
+}
+
+enum WaveState {
+  start,
+  end,
+}
 
 class WaveManager extends Component with HasGameReference<SatefliesGame> {
   WaveManager({
-    required this.waveNumber,
     required this.impulseTargets,
   });
 
-  bool isBossWave = false;
+  WaveState? _waveState;
+
+  bool get hasStarted => state == WaveState.start;
+  bool get hasEnded => state == WaveState.end;
+
+  WaveState get state => _waveState ?? WaveState.start;
+
+  set state(WaveState localState) {
+    _waveState = localState;
+  }
+
+  WaveType? _waveType;
+
+  bool get isBossRound => waveType == WaveType.boss;
+  bool get isTutorial => waveType == WaveType.tutorial;
+  bool get hasMedium => waveType == WaveType.medium;
+  bool get hasHard => waveType == WaveType.hard;
+
+  WaveType get waveType => _waveType ?? WaveType.tutorial;
+
+  set waveType(WaveType localWaveState) {
+    _waveType = localWaveState;
+  }
+
+  // bool isBossWave = false;
   bool isBossAdded = false;
   bool isProbsRefreshed = false;
 
-  final List<Vector2> impulseTargets;
-  final int waveNumber;
+  bool initialAdded = false;
 
-  int? satellitePowerLevel;
+  final List<Vector2> impulseTargets;
 
   late SatelliteComponent easySatellite;
 
@@ -42,8 +76,6 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
 
   @override
   FutureOr<void> onLoad() {
-    isBossWave = (waveNumber % 10) == 0;
-
     spawnTimer = Timer(1, onTick: () => spawnSatellites(), repeat: true);
     spawnTimer.start();
 
@@ -54,7 +86,7 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
       SatelliteDifficulty.boss,
     ]);
 
-    generateWaveEnemies();
+    pendingSpawn = generateWaveEnemies();
 
     return super.onLoad();
   }
@@ -62,19 +94,33 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
   @override
   void update(double dt) {
     if (spawnTimer.isRunning()) {
+      game.waveTextComponent.text = 'Wave ${game.waveNumber}';
       spawnTimer.update(dt);
     }
     super.update(dt);
   }
 
   void onWaveComplete() {
-    ++game.waveNumber;
-    isBossWave = (waveNumber % 10) == 0;
+    game.waveNumber = ++game.waveNumber;
+    if ((game.waveNumber % 10) == 0) {
+      waveType = WaveType.boss;
+    } else if (game.waveNumber > 7) {
+      waveType = WaveType.hard;
+    } else if (game.waveNumber > 3) {
+      waveType = WaveType.medium;
+    }
+    resetWave();
+    pendingSpawn = generateWaveEnemies();
   }
 
-  int calculateTotalWavePower() {
-    return (waveNumber * 1.5).round();
+  void resetWave() {
+    index = 0;
+    spawnTimer.start();
+    enemies.clear();
+    pendingSpawn.clear();
   }
+
+  int calculateTotalWavePower() => (game.waveNumber * 2).toInt();
 
   Map<SatelliteDifficulty, double> getEnemyProbabilities() {
     // Initialize with base probabilities
@@ -86,16 +132,19 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
       double? probability;
       switch (type) {
         case SatelliteDifficulty.easy:
-          probability = max(0.8 - (waveNumber * 0.05), 0.2);
+          probability = max(0.8 - (game.waveNumber * 0.05), 0.2);
           break;
         case SatelliteDifficulty.medium:
-          probability = min(0.1 + (waveNumber * 0.03), 0.4);
+          probability =
+              isTutorial ? 0 : min(0.1 + (game.waveNumber * 0.03), 0.4);
           break;
         case SatelliteDifficulty.hard:
-          probability = min(0.05 + (waveNumber * 0.02), 0.3);
+          probability = (hasHard || isBossRound)
+              ? 0
+              : min(0.05 + (game.waveNumber * 0.02), 0.3);
           break;
         case SatelliteDifficulty.boss:
-          probability = (isBossWave && !isBossAdded) ? 1 : 0;
+          probability = (isBossRound && !isBossAdded) ? 1 : 0;
           break;
       }
       probabilities[type] = probability;
@@ -103,6 +152,7 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
 
     // Normalize probabilities to sum to 1.0
     double total = probabilities.values.reduce((a, b) => a + b);
+
     probabilities.forEach((key, value) {
       probabilities[key] = value / total;
     });
@@ -124,9 +174,9 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
 
       SatelliteDifficulty selectedType = _selectEnemyType(probabilities, rnd);
 
-      final powerLevel = _getPowerLevelForType(selectedType);
+      final powerLevel = _getPowerLevel(selectedType);
 
-      if (isBossWave && !isBossAdded) {
+      if (isBossRound && !isBossAdded) {
         enemies.add(createEnemy(SatelliteDifficulty.boss));
         remainingPower -= powerLevel;
         isBossAdded = true;
@@ -136,17 +186,15 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
         enemies.add(createEnemy(selectedType));
         remainingPower -= powerLevel;
       } else {
-        final lowestType = _getLowestPowerEnemyType();
-        int lowestPower = _getPowerLevelForType(lowestType);
+        // final lowestType = _getLowestPowerEnemyType();
+        int lowestPower = _getPowerLevel(SatelliteDifficulty.easy);
 
         if (lowestPower <= remainingPower) {
-          enemies.add(createEnemy(lowestType));
+          enemies.add(createEnemy(SatelliteDifficulty.easy));
         }
         break;
       }
     }
-    pendingSpawn = List.from(enemies);
-
     return enemies;
   }
 
@@ -167,24 +215,23 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
     return difficultyList.first;
   }
 
-  // Helper to find lowest power enemy type
-  SatelliteDifficulty _getLowestPowerEnemyType() {
-    SatelliteDifficulty lowestType = difficultyList.first;
-    int lowestPower = _getPowerLevelForType(lowestType);
+  // SatelliteDifficulty _getLowestPowerEnemyType() {
+  //   SatelliteDifficulty lowestType = difficultyList.first;
+  //   int lowestPower = _getPowerLevelForType(lowestType);
 
-    for (var type in difficultyList) {
-      int power = _getPowerLevelForType(type);
-      if (power < lowestPower) {
-        lowestType = type;
-        lowestPower = power;
-      }
-    }
+  //   for (var type in difficultyList) {
+  //     int power = _getPowerLevelForType(type);
+  //     if (power < lowestPower) {
+  //       lowestType = type;
+  //       lowestPower = power;
+  //     }
+  //   }
 
-    return lowestType;
-  }
+  //   return lowestType;
+  // }
 
   // Helper to get power level for an enemy type
-  int _getPowerLevelForType(SatelliteDifficulty type) {
+  int _getPowerLevel(SatelliteDifficulty type) {
     // Replace with your actual way of getting power levels
     switch (type) {
       case SatelliteDifficulty.easy:
@@ -208,10 +255,15 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
   }
 
   void spawnSatellites() {
+    state = WaveState.start;
     if (index < pendingSpawn.length) {
       final currentSatellite = pendingSpawn[index];
       ++index;
       game.world.add(currentSatellite);
+      game.waveSatellites.add(currentSatellite);
+      initialAdded = true;
+    } else if (index >= pendingSpawn.length) {
+      spawnTimer.stop();
     }
   }
 }
