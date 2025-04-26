@@ -41,6 +41,10 @@ class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
     }
 
     if (deathTimer.isRunning()) {
+      if (parent.isWithinOrbit) {
+        deathTimer.stop();
+        deathTimer.reset();
+      }
       deathTimer.update(dt);
     }
     super.update(dt);

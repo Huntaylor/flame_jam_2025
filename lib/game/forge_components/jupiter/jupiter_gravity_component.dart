@@ -24,26 +24,44 @@ class JupiterGravityComponent extends BodyComponent<SatefliesGame>
 
   @override
   void beginContact(Object other, Contact contact) {
-    if (other is SatelliteComponent) {
+    if (other is SatelliteComponent && !other.isTooLate) {
       if (other.currentHealth > 0) {
+        final newSatellite = SatelliteComponent(
+          newPosition: other.position,
+          isTooLate: true,
+          isBelow: other.isBelow,
+          difficulty: other.difficulty,
+        );
         other.state = SatelliteState.orbiting;
 
-        other.isTooLate = true;
-        if (!game.orbitingSatellites.contains(other)) {
-          game.orbitingSatellites.add(other);
+        game.world.remove(other);
+
+        game.world.add(newSatellite);
+
+        if (!game.orbitingSatellites.contains(newSatellite)) {
+          game.orbitingSatellites.add(newSatellite);
         }
       } else {
         other.controllerBehavior.destroySatellite();
       }
-    } else if (other is AsteroidComponent &&
-        other.state != AsteroidState.firing) {
+    } else if (other is AsteroidComponent && !other.isFiring) {
       other.state = AsteroidState.orbitingJupiter;
       if (!game.asteroids.contains(other)) {
         // print('does not contain');
         game.asteroids.add(other);
       }
+    } else if (other is AsteroidComponent && other.isFiring) {
+      other.isWithinOrbit = true;
     }
     super.beginContact(other, contact);
+  }
+
+  @override
+  void endContact(Object other, Contact contact) {
+    if (other is AsteroidComponent && other.isFiring) {
+      other.isWithinOrbit = false;
+    }
+    super.endContact(other, contact);
   }
 
   @override

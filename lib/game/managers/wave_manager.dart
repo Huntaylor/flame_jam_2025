@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/sateflies_game.dart';
+import 'package:logging/logging.dart';
 
 enum WaveType {
   tutorial,
@@ -73,6 +74,8 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
 
   int waveNumber = 1;
 
+  double stepUpSpeed = 0;
+
   final rnd = Random();
 
   late Timer spawnTimer;
@@ -80,13 +83,14 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
 
   @override
   FutureOr<void> onLoad() {
+    checkWaves();
     waveTimer = Timer(
       5,
       onTick: () => onWaveComplete(),
       autoStart: false,
       repeat: false,
     );
-    spawnTimer = Timer(1, onTick: () => spawnSatellites(), repeat: true);
+    spawnTimer = Timer(.01, onTick: () => spawnSatellites(), repeat: true);
     spawnTimer.start();
 
     difficultyList.addAll([
@@ -102,6 +106,25 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
     return super.onLoad();
   }
 
+  void checkWaves() {
+    if ((waveNumber % 10) == 0) {
+      stepUpSpeed = stepUpSpeed + .5;
+      isBossRound = true;
+    } else {
+      isBossRound = false;
+    }
+
+    if (waveNumber > 10 && !introduceFastSate) {
+      waveType = WaveType.tutorialComplete;
+      introduceFastSate = true;
+    } else if (waveNumber > 7 && !introduceHardSate) {
+      waveType = WaveType.tutorialComplete;
+      introduceHardSate = true;
+    } else if (waveNumber > 3 && !isTutorialComplete) {
+      waveType = WaveType.tutorialComplete;
+    }
+  }
+
   @override
   void update(double dt) {
     if (spawnTimer.isRunning()) {
@@ -112,11 +135,21 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
       waveTimer.update(dt);
     }
     if (game.isGameStarted) {
+      if (isInProgress) {
+        if (game.waveSatellites.length == 1) {
+          game.satellitesLeftTextComponent.text =
+              '${game.waveSatellites.length} Sateflie left';
+        } else {
+          game.satellitesLeftTextComponent.text =
+              '${game.waveSatellites.length} Sateflies left';
+        }
+      }
       // Should be called one time and when all the current wave
       // satellites are destroyed
       if (isInProgress &&
           game.waveSatellites.isEmpty &&
           !waveTimer.isRunning()) {
+        game.satellitesLeftTextComponent.text = 'Wave Complete!';
         initialAdded = false;
         state = WaveState.end;
         waveTimer.start();
@@ -127,17 +160,7 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
 
   void onWaveComplete() {
     waveNumber = ++waveNumber;
-    if ((waveNumber % 10) == 0) {
-      isBossRound = true;
-    }
-
-    if (waveNumber > 10 && !introduceFastSate) {
-      introduceFastSate = true;
-    } else if (waveNumber > 7 && !introduceHardSate) {
-      introduceHardSate = true;
-    } else if (waveNumber > 3 && !isTutorialComplete) {
-      waveType = WaveType.tutorialComplete;
-    }
+    checkWaves();
     resetWave();
     pendingSpawn = generateWaveEnemies();
   }
@@ -173,7 +196,15 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
               !introduceHardSate ? 0 : min(0.05 + (waveNumber * 0.02), 0.3);
           break;
         case SatelliteDifficulty.boss:
-          probability = (isBossRound && !isBossAdded) ? 1 : 0;
+          probability = 0;
+
+          if (isBossRound) {
+            if (waveNumber > 10) {
+              probability = min(0.05 + (waveNumber * 0.02), 0.15);
+            } else if (!isBossAdded) {
+              probability = 1;
+            }
+          }
           break;
       }
       probabilities[type] = probability;
@@ -205,9 +236,7 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
 
       final powerLevel = _getPowerLevel(selectedType);
 
-      if (isBossRound && !isBossAdded) {
-        enemies.add(createEnemy(SatelliteDifficulty.boss));
-        remainingPower -= powerLevel;
+      if (selectedType == SatelliteDifficulty.boss && waveNumber == 10) {
         isBossAdded = true;
       }
 
@@ -222,6 +251,10 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
         }
         break;
       }
+    }
+    if (isBossRound && !enemies.any((e) => e.isBoss)) {
+      Logger('Wave Manager -- Wave did not contain a boss at Boss Round');
+      enemies.add(createEnemy(SatelliteDifficulty.boss));
     }
     return enemies;
   }
@@ -263,8 +296,13 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
       indexLength,
     );
 
-    return SatelliteComponent(difficulty: type, isBelow: index <= 4)
-      ..setImpulseTarget = impulseTargets[index];
+    return SatelliteComponent(
+      newPosition: game.earthPosition,
+      isTooLate: false,
+      difficulty: type,
+      isBelow: index <= 4,
+      stepUpSpeed: stepUpSpeed,
+    )..setImpulseTarget = impulseTargets[index];
   }
 
   void spawnSatellites() {

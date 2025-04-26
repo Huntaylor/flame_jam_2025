@@ -6,6 +6,7 @@ import 'package:flame/extensions.dart';
 import 'package:flame/particles.dart' as parts;
 import 'package:flame_behaviors/flame_behaviors.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite/behaviors/satellite_shapes.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
@@ -29,8 +30,7 @@ class SatelliteControllerBehavior extends Behavior<SatelliteComponent>
 
   @override
   void update(double dt) {
-    if (!game.camera.visibleWorldRect
-            .containsPoint(game.camera.globalToLocal(parent.position)) &&
+    if (!game.camera.visibleWorldRect.containsPoint(parent.position) &&
         !parent.isTooLate &&
         !deathTimer.isRunning()) {
       deathTimer.start();
@@ -52,8 +52,25 @@ class SatelliteControllerBehavior extends Behavior<SatelliteComponent>
 
   void destroySatellite() {
     parent.state = SatelliteState.destroyed;
-    game.waveSatellites.remove(parent);
-    _explodeSatellite(parent.polyShapes, parent.position, parent);
+    if (game.waveManager.contains(parent)) {
+      game.waveSatellites.remove(parent);
+    }
+    if (game.orbitingSatellites.contains(parent)) {
+      game.orbitingSatellites.remove(parent);
+    }
+    switch (parent.difficulty) {
+      case SatelliteDifficulty.boss:
+        _explodeSatellite(bossSatellite, parent.position, parent);
+      case SatelliteDifficulty.easy:
+        _explodeSatellite(smallerSatellite, parent.position, parent);
+      case SatelliteDifficulty.medium:
+        _explodeSatellite(mediumSatellite, parent.position, parent);
+      case SatelliteDifficulty.hard:
+        _explodeSatellite(hardSatellite, parent.position, parent);
+      case SatelliteDifficulty.fast:
+        _explodeSatellite(fastSatellite, parent.position, parent);
+    }
+    _explodeSatellite(smallerSatellite, parent.position, parent);
   }
 
   void _explodeSatellite(List<List<Vector2>> polyShapes, Vector2 position,

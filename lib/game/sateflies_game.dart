@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
+import 'package:flame/extensions.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/components/asteroid_angle_component.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
@@ -17,6 +18,7 @@ import 'package:flame_jam_2025/game/forge_components/satellite/satellite_compone
 import 'package:flame_jam_2025/game/managers/asteroid_spawn_manager.dart';
 import 'package:flame_jam_2025/game/managers/wave_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 enum GameState { waveStart, waveEnd }
 
@@ -37,10 +39,6 @@ class SatefliesGame extends Forge2DGame
   final double heavyDamage = 75;
   final double xHeavyDamage = 100;
   final double cometDamage = 200;
-
-  // late Timer asteroidTimer;
-  // late Timer sateTimer;
-  // late Timer stopTimer;
 
   late double jupiterSize;
   late double earthSize;
@@ -72,6 +70,7 @@ class SatefliesGame extends Forge2DGame
   late AsteroidSpawnManager asteroidSpawnManager;
 
   late TextComponent waveTextComponent;
+  late TextComponent satellitesLeftTextComponent;
 
   final rnd = Random();
 
@@ -81,6 +80,7 @@ class SatefliesGame extends Forge2DGame
   // bool isWaveOver = false;
 
   String waveText = '';
+  String satellitesLeftText = '';
 
   Vector2? lineSegment;
 
@@ -106,6 +106,7 @@ class SatefliesGame extends Forge2DGame
     setUpWaves();
 
     waveText = 'Wave ${waveManager.waveNumber}';
+    satellitesLeftText = '${waveSatellites.length} Sateflies left';
 
     isGameStarted = true;
     final viewfinder = Viewfinder();
@@ -121,7 +122,12 @@ class SatefliesGame extends Forge2DGame
     earthGravityComponent = EarthGravityComponent();
 
     waveTextComponent = TextComponent(
+      anchor: Anchor.center,
       text: waveText,
+    );
+    satellitesLeftTextComponent = TextComponent(
+      anchor: Anchor.center,
+      text: satellitesLeftText,
     );
 
     viewfinder
@@ -135,7 +141,11 @@ class SatefliesGame extends Forge2DGame
       viewfinder: viewfinder,
       hudComponents: [
         FpsTextComponent(),
-        waveTextComponent..position = Vector2(1920 / 2, 0),
+        waveTextComponent
+          ..position = Vector2(1920 / 2, waveTextComponent.height),
+        satellitesLeftTextComponent
+          ..position = Vector2(
+              1920 / 2, waveTextComponent.height + waveTextComponent.height),
       ],
     );
 
@@ -151,12 +161,6 @@ class SatefliesGame extends Forge2DGame
 
     return super.onLoad();
   }
-
-  // @override
-  // void update(double dt) {
-
-  //   super.update(dt);
-  // }
 
   void setUpWaves() {
     asteroidSpawnManager = AsteroidSpawnManager();
@@ -247,16 +251,20 @@ class SatefliesGame extends Forge2DGame
         camera.globalToLocal(event.devicePosition),
       );
       final asteroid = asteroids.firstWhere((e) => e.isOrbiting);
-      final newAsteroid = AsteroidComponent(
-        startPosition: Vector2.zero(),
-        startingDamage: asteroid.startingDamage,
-        newPosition: asteroid.position,
-        currentColor: asteroid.currentColor,
-      );
-      newAsteroid.state = AsteroidState.firing;
-      asteroids.removeWhere((e) => e == asteroid);
-      world.remove(asteroid);
-      world.add(newAsteroid);
+      try {
+        final newAsteroid = AsteroidComponent(
+          startPosition: Vector2.zero(),
+          startingDamage: asteroid.startingDamage,
+          newPosition: asteroid.position,
+          currentColor: asteroid.currentColor,
+        );
+        newAsteroid.state = AsteroidState.firing;
+        asteroids.removeWhere((e) => e == asteroid);
+        world.remove(asteroid);
+        world.add(newAsteroid);
+      } catch (e) {
+        Logger('Sateflies game -- onTapDown Asteroid Creation Exception: $e');
+      }
     }
   }
 }

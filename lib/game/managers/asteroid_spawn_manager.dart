@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
+import 'package:flame_jam_2025/game/forge_components/upgrades/upgrade_component.dart';
 import 'package:flame_jam_2025/game/sateflies_game.dart';
 
 enum OrbitTarget { top, bottom, right }
@@ -13,7 +14,8 @@ class AsteroidSpawnManager extends Component
 
   int maxAsteroids = 50;
 
-  int currentMax = 15;
+  int currentMax = 12;
+  // int currentMax = 50;
 
   int currentAsteroids = 0;
 
@@ -88,7 +90,13 @@ class AsteroidSpawnManager extends Component
     super.update(dt);
   }
 
-  void gainedCountUpgrade() {
+  void gainedUpgrade(UpgradeType type) {
+    switch (type) {
+      case UpgradeType.speed:
+      case UpgradeType.size:
+      case UpgradeType.damage:
+      case UpgradeType.quantity:
+    }
     asterCountUpgrade = asterCountUpgrade + 2;
   }
 
@@ -128,11 +136,6 @@ class AsteroidSpawnManager extends Component
   }
 
   void resetAsteroidNum() {
-    // currentMax = (currentMax +
-    //         game.waveManager.waveNumber +
-    //         (game.waveSatellites.length / 2))
-    //     .round();
-
     currentMax = currentMax + asterCountUpgrade;
     if (currentMax > maxAsteroids) {
       currentMax = maxAsteroids;

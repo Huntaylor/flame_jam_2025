@@ -57,6 +57,8 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
 
   bool isSensor = true;
 
+  bool isWithinOrbit = false;
+
   bool shouldRepel = false;
 
   late FixtureDef fixtureDefCircle;
@@ -64,6 +66,40 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
 
   late double turningDirection;
   Random random = Random();
+
+  @override
+  Future<void> onLoad() {
+    addBehaviors();
+
+    currentDamage = startingDamage;
+    Color chosenColor;
+    turningDirection = random.nextDouble() * 0.1;
+    final brown = Colors.brown;
+    final blueGrey = Colors.blueGrey;
+    final rnd = Random();
+    {
+      if (rnd.nextBool()) {
+        chosenColor = brown;
+      } else {
+        chosenColor = blueGrey;
+      }
+    }
+    paint = Paint()..color = currentColor ?? chosenColor;
+    currentColor ??= chosenColor;
+
+    return super.onLoad();
+  }
+
+  @override
+  void update(double dt) {
+    if (isFiring) {
+      body.setTransform(
+        position,
+        angle + -turningDirection,
+      );
+    }
+    super.update(dt);
+  }
 
   @override
   void beginContact(Object other, Contact contact) {
@@ -100,46 +136,6 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
       }
     }
     super.beginContact(other, contact);
-  }
-
-  @override
-  void onRemove() {
-    print('Kill asteroid');
-    super.onRemove();
-  }
-
-  @override
-  Future<void> onLoad() {
-    addBehaviors();
-
-    currentDamage = startingDamage;
-    Color chosenColor;
-    turningDirection = random.nextDouble() * 0.1;
-    final brown = Colors.brown;
-    final blueGrey = Colors.blueGrey;
-    final rnd = Random();
-    {
-      if (rnd.nextBool()) {
-        chosenColor = brown;
-      } else {
-        chosenColor = blueGrey;
-      }
-    }
-    paint = Paint()..color = currentColor ?? chosenColor;
-    currentColor ??= chosenColor;
-
-    return super.onLoad();
-  }
-
-  @override
-  void update(double dt) {
-    if (isFiring) {
-      body.setTransform(
-        position,
-        angle + turningDirection,
-      );
-    }
-    super.update(dt);
   }
 
   @override
