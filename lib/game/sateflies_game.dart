@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
+import 'package:flame/experimental.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/components/asteroid_angle_component.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
@@ -63,14 +64,10 @@ class SatefliesGame extends Forge2DGame
   List<SatelliteComponent> orbitingSatellites = [];
   List<SatelliteComponent> waveSatellites = [];
 
-  int waveNumber = 1;
-
   late WaveManager waveManager;
   late AsteroidSpawnManager asteroidSpawnManager;
 
   late TextComponent waveTextComponent;
-
-  late Timer waveTimer;
 
   final rnd = Random();
 
@@ -102,14 +99,9 @@ class SatefliesGame extends Forge2DGame
 
   @override
   FutureOr<void> onLoad() {
-    waveText = 'Wave $waveNumber';
+    setUpWaves();
 
-    waveTimer = Timer(
-      5,
-      onTick: () => waveManager.onWaveComplete(),
-      autoStart: false,
-      repeat: false,
-    );
+    waveText = 'Wave ${waveManager.waveNumber}';
 
     isGameStarted = true;
     final viewfinder = Viewfinder();
@@ -147,8 +139,6 @@ class SatefliesGame extends Forge2DGame
 
     spawnAsteroids();
 
-    setUpWaves();
-
     world.addAll([
       jupiterComponent,
       jupiterGravityComponent,
@@ -159,23 +149,11 @@ class SatefliesGame extends Forge2DGame
     return super.onLoad();
   }
 
-  @override
-  void update(double dt) {
-    if (waveTimer.isRunning()) {
-      waveTimer.update(dt);
-    }
-    if (isGameStarted) {
-      if (waveManager.initialAdded &&
-          waveManager.hasStarted &&
-          waveSatellites.isEmpty &&
-          !waveTimer.isRunning()) {
-        waveManager.initialAdded = false;
-        waveManager.state = WaveState.end;
-        waveTimer.start();
-      }
-    }
-    super.update(dt);
-  }
+  // @override
+  // void update(double dt) {
+
+  //   super.update(dt);
+  // }
 
   void setUpWaves() {
     asteroidSpawnManager = AsteroidSpawnManager();

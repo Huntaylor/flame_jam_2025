@@ -12,7 +12,8 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatefliesGame>
   JupiterGravityRepellentComponent({super.priority})
       : super(
           paint: Paint()
-            ..color = Colors.red
+            // ..color = Colors.red
+            ..color = Colors.transparent
             ..strokeWidth = 0.5
             ..style = PaintingStyle.stroke,
         );

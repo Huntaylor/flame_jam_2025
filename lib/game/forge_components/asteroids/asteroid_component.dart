@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flame/extensions.dart';
 import 'package:flame_behaviors/flame_behaviors.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/behaviors/asteroid_controller_behavior.dart';
@@ -65,7 +66,9 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
   @override
   void beginContact(Object other, Contact contact) {
     if (other is SatelliteComponent && isFiring) {
-      if (sate != null && other != sate) {
+      if (other.isTooLate) {
+        return;
+      } else if (sate != null && other != sate) {
         sate = other;
         dealtDamage = true;
         if (other.currentHealth >= currentDamage) {
@@ -90,6 +93,12 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
   }
 
   @override
+  void onRemove() {
+    print('Kill asteroid');
+    super.onRemove();
+  }
+
+  @override
   Future<void> onLoad() {
     addBehaviors();
 
@@ -108,6 +117,7 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
     }
     paint = Paint()..color = currentColor ?? chosenColor;
     currentColor ??= chosenColor;
+
     return super.onLoad();
   }
 
@@ -154,7 +164,7 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
     body.setMassData(MassData()..mass = 1.2);
 
     if (isFiring) {
-      var speed = 50;
+      var speed = 25 + controllerBehavior.speedUpgradeIncrease;
       var velocityX = game.targetPosition.x - body.position.x;
 
       var velocityY = game.targetPosition.y - body.position.y;

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
+import 'package:flame/extensions.dart';
 import 'package:flame/particles.dart' as parts;
 import 'package:flame_behaviors/flame_behaviors.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
@@ -13,6 +15,40 @@ class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
   AsteroidControllerBehavior();
 
   final rnd = Random();
+
+  late Timer deathTimer;
+
+  int speedUpgradeIncrease = 0;
+  int speedUpgradeCount = 0;
+
+  @override
+  FutureOr<void> onLoad() {
+    deathTimer = Timer(
+      3,
+      onTick: () => game.world.remove(parent),
+      autoStart: false,
+      repeat: false,
+    );
+    return super.onLoad();
+  }
+
+  @override
+  void update(double dt) {
+    if (!game.camera.visibleWorldRect.containsPoint(parent.position) &&
+        parent.isFiring &&
+        !deathTimer.isRunning()) {
+      deathTimer.start();
+    }
+
+    if (deathTimer.isRunning()) {
+      deathTimer.update(dt);
+    }
+    super.update(dt);
+  }
+
+  void gainedSpeedUpgrade() {
+    speedUpgradeIncrease = speedUpgradeCount * 2;
+  }
 
   void explodeAsteroid(Vector2 position, AsteroidComponent _component) async {
     final explosionParticle = ParticleSystemComponent(

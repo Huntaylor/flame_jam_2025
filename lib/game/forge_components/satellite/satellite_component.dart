@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flame/extensions.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_behaviors/flame_behaviors.dart';
 
@@ -11,16 +12,22 @@ import 'package:flutter/material.dart';
 
 enum SatelliteState { destroyed, alive, orbiting, repelling }
 
-enum SatelliteDifficulty { easy, medium, hard, boss }
+enum SatelliteDifficulty { easy, medium, hard, boss, fast }
 
 class SatelliteComponent extends BodyComponent<SatefliesGame>
     with ContactCallbacks, EntityMixin {
   SatelliteComponent({
+    required this.isBelow,
     super.priority,
     required this.difficulty,
   }) : super(paint: Paint()..color = Colors.grey) {
     switch (difficulty) {
       case SatelliteDifficulty.easy:
+        powerLevel = 1;
+        spawnChance = 0.6;
+        totalHealth = lightArmor;
+      case SatelliteDifficulty.fast:
+        speedIncrease = speedIncrease + 3;
         powerLevel = 1;
         spawnChance = 0.6;
         totalHealth = lightArmor;
@@ -38,6 +45,8 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
         totalHealth = bossArmor;
     }
   }
+
+  final bool isBelow;
 
   SatelliteState? _satelliteState;
 
@@ -61,6 +70,8 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
   final double bossArmor = 250;
 
   late double currentHealth;
+
+  int speedIncrease = 0;
 
   final SatelliteDifficulty difficulty;
 
@@ -128,10 +139,21 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
   @override
   void beginContact(Object other, Contact contact) {
     if (other is JupiterGravityComponent && !launchOrbit) {
-      body.applyLinearImpulse(Vector2(2, -1));
+      if (isBelow) {
+        body.applyLinearImpulse(
+          Vector2(2, 1),
+        );
+      } else {
+        body.applyLinearImpulse(
+          Vector2(2, -1),
+        );
+      }
       state = SatelliteState.orbiting;
       launchOrbit = true;
-      game.waveSatellites.remove(this);
+      if (game.waveSatellites.contains(this)) {
+        game.waveSatellites.remove(this);
+      }
+      body.setFixedRotation(false);
     }
     super.beginContact(other, contact);
   }
@@ -147,7 +169,7 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
               healthBarWidth, healthBarHeight),
           customPaint);
 
-      customPaint.color = Colors.pinkAccent;
+      customPaint.color = Colors.red[900]!;
       double currentHealthWidth =
           healthBarWidth * (currentHealth / totalHealth!);
       canvas.drawRect(
@@ -161,8 +183,18 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
   }
 
   @override
+  void onRemove() {
+    print('Satellite went too far');
+    if (game.waveSatellites.contains(this)) {
+      game.waveSatellites.remove(this);
+    }
+    super.onRemove();
+  }
+
+  @override
   Body createBody() {
     final def = BodyDef(
+      fixedRotation: true,
       angle: -45,
       userData: this,
       isAwake: true,
@@ -171,13 +203,14 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
     );
 
     final body = world.createBody(def)..userData = this;
-
     for (var shape in polyShapes) {
       body.createFixtureFromShape(PolygonShape()..set(shape));
     }
+
     body.synchronizeFixtures();
 
-    var speed = .5;
+    // var speed = .5;
+    var speed = 1 + speedIncrease;
     var velocityX = _impulseTarget!.x - body.position.x;
 
     var velocityY = _impulseTarget!.y - body.position.y;

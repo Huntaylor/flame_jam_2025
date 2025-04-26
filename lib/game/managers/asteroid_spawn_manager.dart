@@ -13,11 +13,13 @@ class AsteroidSpawnManager extends Component
 
   int maxAsteroids = 50;
 
-  int waveAsteroids = 15;
+  int currentMax = 15;
 
   int currentAsteroids = 0;
 
   int currentWave = 1;
+
+  int asterCountUpgrade = 0;
 
   List<AsteroidComponent> newAsteroids = [];
 
@@ -60,15 +62,9 @@ class AsteroidSpawnManager extends Component
     Vector2(190.0, 44.0), //Right
   ];
 
-  // Map<OrbitTarget, Vector2> locations = {
-  //   OrbitTarget.top: Vector2(162.0, 41.0),
-  //   OrbitTarget.right: Vector2(186.0, 74.0),
-  //   OrbitTarget.bottom: Vector2(124.0, 100.0)
-  // };
-
   @override
   FutureOr<void> onLoad() {
-    spawnTimer = Timer(6,
+    spawnTimer = Timer(4,
         repeat: false, onTick: () => createNewAsteroids(), autoStart: false);
     individualTimer = Timer(.5,
         repeat: true, onTick: () => launchNewAsteroids(), autoStart: false);
@@ -79,7 +75,7 @@ class AsteroidSpawnManager extends Component
 
   @override
   void update(double dt) {
-    if (game.asteroids.length < waveAsteroids && !hasCalledNew) {
+    if (game.asteroids.length < currentMax && !hasCalledNew) {
       hasCalledNew = false;
       needAsteroids();
     }
@@ -90,6 +86,10 @@ class AsteroidSpawnManager extends Component
       spawnTimer.update(dt);
     }
     super.update(dt);
+  }
+
+  void gainedCountUpgrade() {
+    asterCountUpgrade = asterCountUpgrade + 2;
   }
 
   void needAsteroids() {
@@ -128,21 +128,24 @@ class AsteroidSpawnManager extends Component
   }
 
   void resetAsteroidNum() {
-    waveAsteroids =
-        (waveAsteroids + game.waveNumber + (game.waveSatellites.length / 2))
-            .round();
-    if (waveAsteroids > maxAsteroids) {
-      waveAsteroids = maxAsteroids;
+    // currentMax = (currentMax +
+    //         game.waveManager.waveNumber +
+    //         (game.waveSatellites.length / 2))
+    //     .round();
+
+    currentMax = currentMax + asterCountUpgrade;
+    if (currentMax > maxAsteroids) {
+      currentMax = maxAsteroids;
     }
   }
 
   void createNewAsteroids() {
-    if (currentWave != game.waveNumber) {
-      currentWave = game.waveNumber;
+    if (currentWave != game.waveManager.waveNumber) {
+      currentWave = game.waveManager.waveNumber;
       resetAsteroidNum();
     }
     currentAsteroids = game.asteroids.length;
-    if (currentAsteroids < waveAsteroids) {
+    if (currentAsteroids < currentMax) {
       final index = rnd.nextInt(3);
       final cycleLocation = spawnLocations[index];
       OrbitTarget target;
@@ -159,7 +162,7 @@ class AsteroidSpawnManager extends Component
           target = OrbitTarget.bottom;
       }
 
-      final missingAsteroids = waveAsteroids - currentAsteroids;
+      final missingAsteroids = currentMax - currentAsteroids;
 
       newAsteroids = List<AsteroidComponent>.generate(
         missingAsteroids,

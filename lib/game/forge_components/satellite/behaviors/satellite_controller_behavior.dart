@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flame/components.dart';
+import 'package:flame/extensions.dart';
 import 'package:flame/particles.dart' as parts;
 import 'package:flame_behaviors/flame_behaviors.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
@@ -11,6 +13,33 @@ import 'package:flutter/material.dart';
 class SatelliteControllerBehavior extends Behavior<SatelliteComponent>
     with HasGameReference<SatefliesGame>, ContactCallbacks {
   SatelliteControllerBehavior();
+
+  late Timer deathTimer;
+
+  @override
+  FutureOr<void> onLoad() {
+    deathTimer = Timer(
+      3,
+      onTick: () => game.world.remove(parent),
+      autoStart: false,
+      repeat: false,
+    );
+    return super.onLoad();
+  }
+
+  @override
+  void update(double dt) {
+    if (!game.camera.visibleWorldRect
+            .containsPoint(game.camera.globalToLocal(parent.position)) &&
+        !parent.isTooLate &&
+        !deathTimer.isRunning()) {
+      deathTimer.start();
+    }
+    if (deathTimer.isRunning()) {
+      deathTimer.update(dt);
+    }
+    super.update(dt);
+  }
 
   void takeDamage(double damage) {
     if (!parent.isTooLate) {

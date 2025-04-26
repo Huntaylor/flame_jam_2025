@@ -13,14 +13,14 @@ class JupiterGravityComponent extends BodyComponent<SatefliesGame>
       : super(
           paint: Paint()
             ..color = Colors.blue
-            ..strokeWidth = 0.5
+            ..strokeWidth = 0.15
             ..style = PaintingStyle.stroke,
         );
 
   final double jupiterGravity = 24.79;
   final double jupiterMass = 254.0;
 
-  final double limiter = 50;
+  final double limiter = 40;
 
   @override
   void beginContact(Object other, Contact contact) {
@@ -29,7 +29,9 @@ class JupiterGravityComponent extends BodyComponent<SatefliesGame>
         other.state = SatelliteState.orbiting;
 
         other.isTooLate = true;
-        game.orbitingSatellites.add(other);
+        if (!game.orbitingSatellites.contains(other)) {
+          game.orbitingSatellites.add(other);
+        }
       } else {
         other.controllerBehavior.destroySatellite();
       }
@@ -75,7 +77,7 @@ class JupiterGravityComponent extends BodyComponent<SatefliesGame>
             );
           } else {
             satellite.body.applyForce(
-              gravityDirection / 8,
+              gravityDirection / 2,
               point: satellite.body.worldCenter,
             );
           }
@@ -112,7 +114,7 @@ class JupiterGravityComponent extends BodyComponent<SatefliesGame>
             );
           } else {
             asteroid.body.applyForce(
-              gravityDirection / 2,
+              gravityDirection,
               point: asteroid.body.worldCenter,
             );
           }
