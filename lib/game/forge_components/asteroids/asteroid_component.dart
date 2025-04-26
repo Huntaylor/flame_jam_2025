@@ -4,6 +4,8 @@ import 'package:flame/extensions.dart';
 import 'package:flame_behaviors/flame_behaviors.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/behaviors/asteroid_controller_behavior.dart';
+import 'package:flame_jam_2025/game/forge_components/earth/earth_component.dart';
+import 'package:flame_jam_2025/game/forge_components/earth/earth_gravity_component.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
@@ -65,6 +67,14 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
 
   @override
   void beginContact(Object other, Contact contact) {
+    if (other is EarthGravityComponent) {
+      if (currentDamage < other.damageMinimum) {
+        controllerBehavior.explodeAsteroid(position, this);
+      }
+    }
+    if (other is EarthComponent) {
+      controllerBehavior.explodeAsteroid(position, this);
+    }
     if (other is SatelliteComponent && isFiring) {
       if (other.isTooLate) {
         return;
@@ -183,6 +193,23 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
 
     return body;
   }
+
+  // void fireAsteroid() {
+  //   state = AsteroidState.firing;
+  //   var speed = 25 + controllerBehavior.speedUpgradeIncrease;
+  //   var velocityX = game.targetPosition.x - body.position.x;
+
+  //   var velocityY = game.targetPosition.y - body.position.y;
+  //   var length = sqrt(velocityX * velocityX + velocityY * velocityY);
+
+  //   velocityX *= speed / length;
+
+  //   velocityY *= speed / length;
+
+  //   fireVel = Vector2(velocityX, velocityY);
+  //   body.clearForces();
+  //   body.applyLinearImpulse(fireVel);
+  // }
 
   void addBehaviors() {
     addAll(

@@ -5,13 +5,14 @@ import 'dart:ui';
 import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flame/experimental.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/components/asteroid_angle_component.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
-import 'package:flame_jam_2025/game/forge_components/jupiter_component.dart';
-import 'package:flame_jam_2025/game/forge_components/jupiter_gravity_component.dart';
-import 'package:flame_jam_2025/game/forge_components/jupiter_gravity_repellent_component.dart';
+import 'package:flame_jam_2025/game/forge_components/earth/earth_component.dart';
+import 'package:flame_jam_2025/game/forge_components/earth/earth_gravity_component.dart';
+import 'package:flame_jam_2025/game/forge_components/jupiter/jupiter_component.dart';
+import 'package:flame_jam_2025/game/forge_components/jupiter/jupiter_gravity_component.dart';
+import 'package:flame_jam_2025/game/forge_components/jupiter/jupiter_gravity_repellent_component.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/managers/asteroid_spawn_manager.dart';
 import 'package:flame_jam_2025/game/managers/wave_manager.dart';
@@ -51,6 +52,9 @@ class SatefliesGame extends Forge2DGame
   late Vector2 asteroidAngle;
 
   Vector2 targetPosition = Vector2.zero();
+
+  late EarthComponent earthComponent;
+  late EarthGravityComponent earthGravityComponent;
 
   late JupiterComponent jupiterComponent;
   late JupiterGravityComponent jupiterGravityComponent;
@@ -110,13 +114,11 @@ class SatefliesGame extends Forge2DGame
 
     jupiterGravityRepellentComponent = JupiterGravityRepellentComponent();
 
-    final jupiterGravityComponent = JupiterGravityComponent();
+    jupiterGravityComponent = JupiterGravityComponent();
 
-    final earth = CircleComponent(
-      position: earthPosition,
-      radius: earthSize,
-      anchor: Anchor.center,
-    );
+    earthComponent = EarthComponent();
+
+    earthGravityComponent = EarthGravityComponent();
 
     waveTextComponent = TextComponent(
       text: waveText,
@@ -142,8 +144,9 @@ class SatefliesGame extends Forge2DGame
     world.addAll([
       jupiterComponent,
       jupiterGravityComponent,
-      earth,
+      earthComponent,
       jupiterGravityRepellentComponent,
+      earthGravityComponent,
     ]);
 
     return super.onLoad();

@@ -102,7 +102,7 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatefliesGame>
         gravityDirection.scaleTo(gravity * dt);
         //need to add in a normalizer
         satellite.body.applyForce(
-          (gravityDirection / 10).inverted(),
+          (gravityDirection / 6).inverted(),
           point: satellite.body.worldCenter,
         );
       }

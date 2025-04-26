@@ -5,7 +5,7 @@ import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_behaviors/flame_behaviors.dart';
 
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
-import 'package:flame_jam_2025/game/forge_components/jupiter_gravity_component.dart';
+import 'package:flame_jam_2025/game/forge_components/jupiter/jupiter_gravity_component.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/behaviors/satellite_controller_behavior.dart';
 import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
@@ -23,25 +23,17 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
   }) : super(paint: Paint()..color = Colors.grey) {
     switch (difficulty) {
       case SatelliteDifficulty.easy:
-        powerLevel = 1;
-        spawnChance = 0.6;
         totalHealth = lightArmor;
       case SatelliteDifficulty.fast:
         speedIncrease = speedIncrease + 3;
-        powerLevel = 1;
-        spawnChance = 0.6;
-        totalHealth = lightArmor;
+        totalHealth = cheapArmor;
       case SatelliteDifficulty.medium:
-        powerLevel = 3;
-        spawnChance = 0.3;
+        speedIncrease = speedIncrease + .5;
         totalHealth = mediumArmor;
       case SatelliteDifficulty.hard:
-        powerLevel = 5;
-        spawnChance = 0.15;
+        speedIncrease = speedIncrease + 1;
         totalHealth = heavyArmor;
       case SatelliteDifficulty.boss:
-        powerLevel = 10;
-        spawnChance = 0.05;
         totalHealth = bossArmor;
     }
   }
@@ -64,6 +56,7 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
   //Max 100 components - Max 30 asteroids
   // 70 Satellites max
 
+  final double cheapArmor = 25;
   final double lightArmor = 50;
   final double mediumArmor = 75;
   final double heavyArmor = 100;
@@ -71,15 +64,13 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
 
   late double currentHealth;
 
-  int speedIncrease = 0;
+  double speedIncrease = 0;
 
   final SatelliteDifficulty difficulty;
 
   Vector2? _impulseTarget;
 
   double? totalHealth;
-  double? powerLevel;
-  double? spawnChance;
 
   late AsteroidComponent contactAsteroid;
 
@@ -154,6 +145,11 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
         game.waveSatellites.remove(this);
       }
       body.setFixedRotation(false);
+      if (body.fixtures.any((e) => e.isSensor)) {
+        for (var fixture in body.fixtures) {
+          fixture.setSensor(false);
+        }
+      }
     }
     super.beginContact(other, contact);
   }
@@ -204,7 +200,8 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
 
     final body = world.createBody(def)..userData = this;
     for (var shape in polyShapes) {
-      body.createFixtureFromShape(PolygonShape()..set(shape));
+      final fixtureDef = FixtureDef(PolygonShape()..set(shape), isSensor: true);
+      body.createFixture(fixtureDef);
     }
 
     body.synchronizeFixtures();
