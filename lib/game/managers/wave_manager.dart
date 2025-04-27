@@ -73,6 +73,16 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
     UpgradeType.size,
     UpgradeType.speed,
   ];
+
+  List<SatelliteCountry> originCountries = [
+    SatelliteCountry.green,
+    SatelliteCountry.brown,
+    SatelliteCountry.cyan,
+    SatelliteCountry.pink,
+    SatelliteCountry.white,
+    SatelliteCountry.grey,
+  ];
+
   List<SatelliteDifficulty> difficultyList = [
     SatelliteDifficulty.easy,
     SatelliteDifficulty.medium,
@@ -333,12 +343,18 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
     );
 
     return SatelliteComponent(
+      originCountry: (waveNumber == 1) ? SatelliteCountry.green : getOrigin(),
       newPosition: game.earthPosition,
       isTooLate: false,
       difficulty: type,
       isBelow: index <= 4,
       stepUpSpeed: stepUpSpeed,
     )..setImpulseTarget = impulseTargets[index];
+  }
+
+  SatelliteCountry getOrigin() {
+    final randomCountry = rnd.nextInt(originCountries.length);
+    return originCountries[randomCountry];
   }
 
   void spawnSatellites() {

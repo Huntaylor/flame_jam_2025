@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:app_ui/app_ui.dart';
 import 'package:flame/components.dart';
+import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/managers/wave_manager.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +25,16 @@ class StoryComponent extends PositionComponent
 
   late Timer readingTimer;
 
+  String bestCountryName = '';
+  int bestCountryCount = 0;
+
+  int greenCountry = 0;
+  int greyCountry = 0;
+  int cyanCountry = 0;
+  int whiteCountry = 0;
+  int pinkCountry = 0;
+  int brownCountry = 0;
+
   final bgPaint = Paint()..color = Colors.white.withAlpha(150);
   final borderPaint = Paint()
     ..color = Color(0xFF000000)
@@ -40,6 +52,11 @@ class StoryComponent extends PositionComponent
         removeStory();
       },
     );
+
+    return super.onLoad();
+  }
+
+  void startStory() {
     add(
       TextBoxComponent(
         align: Anchor.center,
@@ -48,17 +65,12 @@ class StoryComponent extends PositionComponent
           growingBox: true,
         ),
         textRenderer: TextPaint(
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+            style: SatellitesTextStyle.headlineSmall.copyWith(fontSize: 12)),
         text: storyLine[0],
         onComplete: () => readingTimer.start(),
         position: Vector2.zero(),
       ),
     );
-    return super.onLoad();
   }
 
   void removeStory() {
@@ -66,27 +78,26 @@ class StoryComponent extends PositionComponent
   }
 
   void addStory() {
+    currentWinningCountry();
     _log.info(updateText());
 
-    add(
-      TextBoxComponent(
-        priority: 5,
-        align: Anchor.center,
-        boxConfig: TextBoxConfig(
-          timePerChar: 0.05,
-          growingBox: true,
+    add(TextBoxComponent(
+      priority: 5,
+      align: Anchor.center,
+      boxConfig: TextBoxConfig(
+        timePerChar: 0.05,
+        growingBox: true,
+      ),
+      textRenderer: TextPaint(
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
         ),
-        textRenderer: TextPaint(
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        text: updateText(),
-        onComplete: () => readingTimer.start(),
-        position: Vector2(50, 50),
-      )..debugMode = true,
-    );
+      ),
+      text: updateText(),
+      onComplete: () => readingTimer.start(),
+      position: Vector2.zero(),
+    ));
   }
 
   @override
@@ -94,54 +105,121 @@ class StoryComponent extends PositionComponent
     if (readingTimer.isRunning()) {
       readingTimer.update(dt);
     }
-    if (game.waveManager.state == WaveState.end && isFinished) {
+    if (game.waveManager.state == WaveState.end &&
+        isFinished &&
+        game.gameState != GameState.end) {
       isFinished = false;
-      add(
-        TextBoxComponent(
-          align: Anchor.center,
-          boxConfig: TextBoxConfig(
-            timePerChar: 0.05,
-            growingBox: true,
-          ),
-          textRenderer: TextPaint(
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          text: storyLine[0],
-          onComplete: () => readingTimer.start(),
-          position: Vector2.zero(),
-        ),
-      );
+      addStory();
     }
     super.update(dt);
   }
 
   String updateText() {
     _log.info('Update Text');
-    int index = game.waveManager.waveNumber - 1;
-    if (game.orbitingSatellites.isEmpty && game.destroyedSatellites.isEmpty) {
-      if (notBreaking.length >= index) {
-        return notBreaking[index];
-      } else {
-        return '';
+
+//?game.waveManager.waveNumber will be the wave that was just completed
+
+    int index = game.waveManager.waveNumber + 1;
+    if (game.orbitingSatellites.isNotEmpty &&
+        game.destroyedSatellites.isEmpty) {
+      _log.info('Current index: $index');
+      switch (index) {
+        case 2:
+          return notBreaking[0];
+        case 3:
+          return notBreaking[1];
+        case 4:
+          return notBreaking[2];
+        case 14:
+          return currentWinningCountry();
+        default:
+          return '';
       }
     } else {
-      if (storyLine.length >= index) {
-        return storyLine[index];
-      } else {
-        return '';
+      _log.info('Current index: $index');
+      switch (index) {
+        case 2:
+          return storyLine[1];
+        case 4:
+          return storyLine[2];
+        case 14:
+          return currentWinningCountry();
+        default:
+          return '';
       }
     }
+  }
+
+  String currentWinningCountry() {
+    greenCountry = 0;
+    greyCountry = 0;
+    cyanCountry = 0;
+    whiteCountry = 0;
+    pinkCountry = 0;
+    brownCountry = 0;
+    for (var satellite in game.orbitingSatellites) {
+      switch (satellite.originCountry) {
+        case SatelliteCountry.green:
+          greenCountry = greenCountry + 1;
+
+        case SatelliteCountry.grey:
+          greyCountry = greyCountry + 1;
+
+        case SatelliteCountry.white:
+          whiteCountry = whiteCountry + 1;
+
+        case SatelliteCountry.brown:
+          brownCountry = brownCountry + 1;
+
+        case SatelliteCountry.cyan:
+          cyanCountry = cyanCountry + 1;
+
+        case SatelliteCountry.pink:
+          pinkCountry = pinkCountry + 1;
+      }
+    }
+    final Map<SatelliteCountry, int> countriesCount = {
+      SatelliteCountry.green: greenCountry,
+      SatelliteCountry.grey: greyCountry,
+      SatelliteCountry.cyan: cyanCountry,
+      SatelliteCountry.white: whiteCountry,
+      SatelliteCountry.pink: pinkCountry,
+      SatelliteCountry.brown: brownCountry,
+    };
+
+    final largest = countriesCount.values.reduce((a, b) => a > b ? a : b);
+    final bestCountry =
+        countriesCount.entries.firstWhere((e) => e.value == largest);
+
+    _log.info('The best Country is: $bestCountry');
+    String countryName;
+    switch (bestCountry.key) {
+      case SatelliteCountry.green:
+        countryName = 'Green Country';
+      case SatelliteCountry.grey:
+        countryName = 'Grey Country';
+      case SatelliteCountry.white:
+        countryName = 'White Country';
+      case SatelliteCountry.brown:
+        countryName = 'Brown Country';
+      case SatelliteCountry.cyan:
+        countryName = 'Cyan Country';
+      case SatelliteCountry.pink:
+        countryName = 'Pink Country';
+    }
+    bestCountryName = countryName;
+    bestCountryCount = bestCountry.value;
+    return 'The country with the most satellites in orbit is $countryName with ${bestCountry.value}';
   }
 
   List<String> storyLine = [
     'Breaking News! The Green Country has successfully launched the first satellite to Jupiter! Other countries are pushing to have the most satellites orbiting the planet.',
     'Breaking News! Scientist Intern makes wild claims that Jupiter is sentient after the launched satellite exploded!',
+    'Breaking News! Scientists are struggling to explain the recent asteroid impacts on the satellites. Investors are taking a risk to allow better satellites to be built.',
   ];
   List<String> notBreaking = [
-    'Breaking News! The Green Country has successfully launched the first satellite to Jupiter! Other countries are pushing to have the most satellites orbiting the planet.'
-        'Breaking News! Scientists find more information about Jupiter, further exciting the rest of the world to continue sending satellites!',
+    'Breaking News! Scientists find more information about Jupiter, exciting the rest of the world to continue sending satellites!',
+    'Breaking News! Scientists are baffled at the simplicity of getting a satellite to Jupiter. Investors  are throwing their money at science to make a profit, allowing for better satellites to be built!',
+    'Breaking News! The science foundation in all countries has an overflow of donations allowing for better and greater satellites! Critics claim the amount of satellites currently orbiting Jupiter could be too much for the planet to handle.',
   ];
 }

@@ -27,6 +27,7 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
     if (other is SatelliteComponent && !other.isTooLate) {
       if (other.currentHealth > 0) {
         final newSatellite = SatelliteComponent(
+          originCountry: other.originCountry,
           newPosition: other.position,
           isTooLate: true,
           isBelow: other.isBelow,

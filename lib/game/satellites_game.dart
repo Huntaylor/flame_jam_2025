@@ -6,8 +6,10 @@ import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/parallax.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/components/mouse_render_component.dart';
+import 'package:flame_jam_2025/game/components/satellite_hud_button.dart';
 import 'package:flame_jam_2025/game/components/story_component.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/forge_components/earth/earth_component.dart';
@@ -22,11 +24,11 @@ import 'package:flame_jam_2025/game/managers/wave_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
-enum GameState { waveStart, waveEnd }
+enum GameState { mainMenu, start, end }
 
 class SatellitesGame extends Forge2DGame
     with TapCallbacks, MouseMovementDetector {
-  SatellitesGame() : super(gravity: Vector2(0, 0)) {
+  SatellitesGame({required this.isPlaying}) : super(gravity: Vector2(0, 0)) {
     jupiterSize = 9;
     earthSize = (jupiterSize / 11);
     earthPosition = Vector2.all(15);
@@ -36,6 +38,7 @@ class SatellitesGame extends Forge2DGame
     asteroidAngle = Vector2(5, -20);
   }
   static final Logger _log = Logger('Satellite Game');
+  bool playSounds = true;
   final double smallDamage = 25;
   final double mediumDamage = 50;
   final double heavyDamage = 75;
@@ -70,25 +73,35 @@ class SatellitesGame extends Forge2DGame
 
   double orbitingPower = 0;
   int currentLength = 0;
-  double totalHealth = 50;
+  double totalHealth = 35;
 
   late WaveManager waveManager;
   late AsteroidSpawnManager asteroidSpawnManager;
 
   late TextComponent waveTextComponent;
   late TextComponent satellitesLeftTextComponent;
+  late TextComponent immersiveModeComponent;
 
   late StoryComponent storyComponent;
+
+  late SatelliteHudButton playButton;
+  late SatelliteHudButton muteButton;
 
   final rnd = Random();
 
   bool isGameStarted = false;
   bool hidHud = false;
+  bool isPlaying = true;
 
   String waveText = '';
   String satellitesLeftText = '';
+  String immersiveModeActive = '';
 
   Vector2? lineSegment;
+
+  late MouseRenderComponent mouseRenderComponent;
+
+  GameState gameState = GameState.mainMenu;
 
   Vector2 randomVector2() => (-Vector2.random(rnd) - Vector2.random(rnd)) * 100;
 
@@ -118,7 +131,7 @@ class SatellitesGame extends Forge2DGame
     storyComponent = StoryComponent(
       position: Vector2(50, 200),
     );
-
+    await setUpAudio();
     setUpWaves();
 
     final parallax = await loadParallaxComponent(
@@ -132,11 +145,43 @@ class SatellitesGame extends Forge2DGame
 
     await images.loadAllImages();
 
-    add(MouseRenderComponent());
+    playButton = SatelliteHudButton(
+      position: Vector2(50, 450),
+      button: TextComponent(text: 'Launch satellite'),
+      onPressed: () {
+        return gameState = GameState.start;
+      },
+    );
+
+    muteButton = SatelliteHudButton(
+      position: Vector2(50, 500),
+      button: TextComponent(text: 'Immersive mode (Mute)'),
+      onPressed: () {
+        isPlaying = !isPlaying;
+        updateSound();
+      },
+    );
+    immersiveModeActive = isPlaying ? 'Off' : 'On';
+    immersiveModeComponent = TextBoxComponent(
+      textRenderer: TextPaint(
+        style: const TextStyle(
+          fontFamily: 'Xanmono',
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      text: immersiveModeActive,
+      position: Vector2(50, 500),
+      anchor: Anchor.center,
+    )..debugMode = true;
+
+    mouseRenderComponent = MouseRenderComponent();
+
+    addAll([playButton, muteButton, immersiveModeComponent]);
+    add(mouseRenderComponent);
     waveText = 'Wave ${waveManager.waveNumber}';
     satellitesLeftText = '${waveSatellites.length} Satellite left';
 
-    isGameStarted = true;
     final viewfinder = Viewfinder();
 
     jupiterComponent = JupiterComponent();
@@ -196,28 +241,53 @@ class SatellitesGame extends Forge2DGame
     return super.onLoad();
   }
 
+  updateSound() {
+    if (isPlaying) {
+      FlameAudio.bgm.pause();
+    } else {
+      FlameAudio.bgm.resume();
+    }
+  }
+
+  setUpAudio() async {
+    await FlameAudio.bgm.initialize();
+    await FlameAudio.bgm.play('ville_seppanen-1_g.mp3', volume: 0.5);
+    isPlaying = FlameAudio.bgm.isPlaying;
+  }
+
   @override
   void update(double dt) {
-    if (orbitingSatellites.length > currentLength) {
-      // for (var satellite in orbitingSatellites) {
-      switch (orbitingSatellites.last.difficulty) {
-        case SatelliteDifficulty.easy:
-          orbitingPower = orbitingPower + 2;
-        case SatelliteDifficulty.medium:
-          orbitingPower = orbitingPower + 3;
-        case SatelliteDifficulty.hard:
-          orbitingPower = orbitingPower + 4;
-        case SatelliteDifficulty.boss:
-          orbitingPower = orbitingPower + 10;
-        case SatelliteDifficulty.fast:
-          orbitingPower = orbitingPower + 1;
-        // }
+    if (gameState != GameState.end) {
+      immersiveModeComponent.text = isPlaying ? 'Off' : 'On';
+      if (gameState != GameState.mainMenu && !isGameStarted) {
+        removeAll([playButton, immersiveModeComponent, muteButton]);
+        isGameStarted = true;
+        storyComponent.startStory();
       }
-      if (orbitingPower >= totalHealth) {
-        // pauseEngine();
+      if (orbitingSatellites.length > currentLength) {
+        // for (var satellite in orbitingSatellites) {
+        switch (orbitingSatellites.last.difficulty) {
+          case SatelliteDifficulty.easy:
+            orbitingPower = orbitingPower + 2;
+          case SatelliteDifficulty.medium:
+            orbitingPower = orbitingPower + 3;
+          case SatelliteDifficulty.hard:
+            orbitingPower = orbitingPower + 4;
+          case SatelliteDifficulty.boss:
+            orbitingPower = orbitingPower + 10;
+          case SatelliteDifficulty.fast:
+            orbitingPower = orbitingPower + 1;
+          // }
+        }
+        if (orbitingPower >= totalHealth && gameState != GameState.end) {
+          gameState == GameState.end;
+          overlays.add('Game Over');
+          remove(mouseRenderComponent);
+        }
+        currentLength = orbitingSatellites.length;
       }
-      currentLength = orbitingSatellites.length;
     }
+
     super.update(dt);
   }
 
@@ -261,28 +331,30 @@ class SatellitesGame extends Forge2DGame
 
   @override
   Future<void> onTapDown(TapDownEvent event) async {
-    super.onTapDown(event);
-    if (asteroids.isNotEmpty && asteroids.any((e) => e.isOrbiting)) {
-      targetPosition.setFrom(
-        camera.globalToLocal(event.devicePosition),
-      );
-      final asteroid = asteroids.firstWhere((e) => e.isOrbiting);
-      try {
-        final newAsteroid = AsteroidComponent(
-          speedScaling: asteroid.speedScaling,
-          startPosition: Vector2.zero(),
-          startingDamage: asteroid.startingDamage,
-          newPosition: asteroid.position,
-          currentColor: asteroid.currentColor,
-          sizeScaling: asteroid.sizeScaling,
+    if (gameState != GameState.mainMenu) {
+      super.onTapDown(event);
+      if (asteroids.isNotEmpty && asteroids.any((e) => e.isOrbiting)) {
+        targetPosition.setFrom(
+          camera.globalToLocal(event.devicePosition),
         );
-        newAsteroid.state = AsteroidState.firing;
-        asteroids.removeWhere((e) => e == asteroid);
-        world.remove(asteroid);
-        world.add(newAsteroid);
-      } catch (e) {
-        _log.severe(
-            'Satellite game -- onTapDown Asteroid Creation Exception', e);
+        final asteroid = asteroids.firstWhere((e) => e.isOrbiting);
+        try {
+          final newAsteroid = AsteroidComponent(
+            speedScaling: asteroid.speedScaling,
+            startPosition: Vector2.zero(),
+            startingDamage: asteroid.startingDamage,
+            newPosition: asteroid.position,
+            currentColor: asteroid.currentColor,
+            sizeScaling: asteroid.sizeScaling,
+          );
+          newAsteroid.state = AsteroidState.firing;
+          asteroids.removeWhere((e) => e == asteroid);
+          world.remove(asteroid);
+          world.add(newAsteroid);
+        } catch (e) {
+          _log.severe(
+              'Satellite game -- onTapDown Asteroid Creation Exception', e);
+        }
       }
     }
   }

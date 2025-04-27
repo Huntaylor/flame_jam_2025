@@ -1,6 +1,4 @@
-import 'package:app_ui/app_ui.dart';
-import 'package:flame/game.dart';
-import 'package:flame_jam_2025/game/satellites_game.dart';
+import 'package:flame_jam_2025/game_view.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -22,21 +20,5 @@ void main() {
   FlutterError.onError = (details) {
     dev.log(details.exceptionAsString(), stackTrace: details.stack);
   };
-  runApp(const App());
-}
-
-class App extends StatelessWidget {
-  const App({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(textTheme: SatellitesTheme.standard.textTheme),
-      home: Scaffold(
-        body: GameWidget<SatellitesGame>.controlled(
-          gameFactory: () => SatellitesGame(),
-        ),
-      ),
-    );
-  }
+  runApp(MyGame());
 }

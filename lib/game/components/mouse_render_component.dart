@@ -13,24 +13,26 @@ class MouseRenderComponent extends Component
 
   @override
   void render(Canvas canvas) {
-    canvas.save();
-    if (game.asteroids.isNotEmpty &&
-        game.lineSegment != null &&
-        game.asteroids.any((e) => e.isOrbiting)) {
-      final firstAsteroids = game.asteroids.firstWhere((e) => e.isOrbiting);
+    if (game.gameState != GameState.mainMenu) {
+      canvas.save();
+      if (game.asteroids.isNotEmpty &&
+          game.lineSegment != null &&
+          game.asteroids.any((e) => e.isOrbiting)) {
+        final firstAsteroids = game.asteroids.firstWhere((e) => e.isOrbiting);
 
-      drawDashedLine(
-        canvas: canvas,
-        p1: game.camera
-            .localToGlobal(firstAsteroids.body.worldCenter)
-            .toOffset(),
-        p2: game.lineSegment!.toOffset(),
-        paint: newPaint..color = Colors.amber,
-        pattern: [20, 30],
-      );
+        drawDashedLine(
+          canvas: canvas,
+          p1: game.camera
+              .localToGlobal(firstAsteroids.body.worldCenter)
+              .toOffset(),
+          p2: game.lineSegment!.toOffset(),
+          paint: newPaint..color = Colors.amber,
+          pattern: [20, 30],
+        );
+      }
+      canvas.restore();
+      super.render(canvas);
     }
-    canvas.restore();
-    super.render(canvas);
   }
 
   Canvas drawDashedLine({

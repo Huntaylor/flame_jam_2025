@@ -16,6 +16,15 @@ enum SatelliteState { destroyed, alive, orbiting, repelling }
 
 enum SatelliteDifficulty { easy, medium, hard, boss, fast }
 
+enum SatelliteCountry {
+  green,
+  grey,
+  white,
+  brown,
+  cyan,
+  pink,
+}
+
 class SatelliteComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks, EntityMixin {
   SatelliteComponent({
@@ -25,7 +34,9 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
     this.stepUpSpeed,
     required this.newPosition,
     required this.isTooLate,
-  }) : super(paint: Paint()..color = Colors.grey) {
+    required this.originCountry,
+    this.countryName,
+  }) /*  : super(paint: Paint()..color = Colors.grey) */ {
     void getSpeed(double difficultySpeed) {
       speedIncrease = speedIncrease + difficultySpeed + (stepUpSpeed ?? 0);
     }
@@ -48,7 +59,32 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
 
         totalHealth = bossArmor;
     }
+
+    switch (originCountry) {
+      case SatelliteCountry.green:
+        paint.color = Colors.green;
+        countryName = 'Green Country';
+      case SatelliteCountry.grey:
+        countryName = 'Grey Country';
+        paint.color = Colors.grey;
+      case SatelliteCountry.white:
+        countryName = 'White Country';
+        paint.color = Colors.white;
+      case SatelliteCountry.brown:
+        countryName = 'Brown Country';
+        paint.color = Colors.brown;
+      case SatelliteCountry.cyan:
+        countryName = 'Cyan Country';
+        paint.color = Colors.cyan;
+      case SatelliteCountry.pink:
+        countryName = 'Pink Country';
+        paint.color = Colors.pink;
+    }
   }
+
+  String? countryName;
+
+  final SatelliteCountry originCountry;
 
   final Vector2 newPosition;
 
@@ -143,7 +179,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
     }
     past10 = game.waveManager.waveNumber > 10;
 
-    final maxTime = 40 / speedIncrease;
+    final maxTime = 30 / speedIncrease;
 
     redirectTimer = Timer(max(1, maxTime),
         autoStart: past10 && !isTooLate,
@@ -217,9 +253,11 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
       canvas.restore();
     }
     super.render(canvas);
+
     if (isBoss && !isTooLate) {
       canvas.drawCircle(Offset.zero, .25, bossPaint..color = Colors.grey[800]!);
     }
+    super.render(canvas);
   }
 
   @override
