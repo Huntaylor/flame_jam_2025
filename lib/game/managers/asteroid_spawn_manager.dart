@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
-import 'package:flame_jam_2025/game/forge_components/upgrades/upgrade_component.dart';
 import 'package:flame_jam_2025/game/sateflies_game.dart';
 
 enum OrbitTarget { top, bottom, right }
@@ -12,10 +11,17 @@ class AsteroidSpawnManager extends Component
     with HasGameReference<SatefliesGame> {
   AsteroidSpawnManager();
 
-  int maxAsteroids = 50;
+  double sizeScaling = 0;
+  double damageScaling = 0;
+  double speedScaling = 0;
+
+// Upgrades
+  final double maxSize = 1.5;
+  final double maxDamage = 100;
+  final double maxSpeed = 40;
+  final int maxAsteroids = 50;
 
   int currentMax = 12;
-  // int currentMax = 50;
 
   int currentAsteroids = 0;
 
@@ -88,16 +94,6 @@ class AsteroidSpawnManager extends Component
       spawnTimer.update(dt);
     }
     super.update(dt);
-  }
-
-  void gainedUpgrade(UpgradeType type) {
-    switch (type) {
-      case UpgradeType.speed:
-      case UpgradeType.size:
-      case UpgradeType.damage:
-      case UpgradeType.quantity:
-    }
-    asterCountUpgrade = asterCountUpgrade + 2;
   }
 
   void needAsteroids() {
@@ -180,7 +176,9 @@ class AsteroidSpawnManager extends Component
               spawnLocation: cycleLocation,
             ),
             startPosition: cycleLocation,
-            startingDamage: game.smallDamage,
+            startingDamage: game.smallDamage + damageScaling,
+            sizeScaling: sizeScaling,
+            speedScaling: speedScaling,
           );
         },
       );

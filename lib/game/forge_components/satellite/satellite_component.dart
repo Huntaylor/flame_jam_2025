@@ -32,7 +32,7 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
 
     switch (difficulty) {
       case SatelliteDifficulty.easy:
-        getSpeed(0);
+        getSpeed(1);
         totalHealth = lightArmor;
       case SatelliteDifficulty.fast:
         getSpeed(4);
@@ -41,7 +41,7 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
         getSpeed(2);
         totalHealth = mediumArmor;
       case SatelliteDifficulty.hard:
-        getSpeed(1);
+        getSpeed(1.5);
         totalHealth = heavyArmor;
       case SatelliteDifficulty.boss:
         getSpeed(3);
@@ -171,16 +171,6 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
         game.waveSatellites.remove(this);
       }
       body.setFixedRotation(false);
-      // try {
-      //   if (body.fixtures.any((e) => e.isSensor)) {
-      //     for (var fixture in body.fixtures) {
-      //       fixture.setSensor(false);
-      //     }
-      //     body.synchronizeFixtures();
-      //   }
-      // } catch (e) {
-      //   Logger('Satellite Component -- setting Sensors to false error: $e');
-      // }
     }
     super.beginContact(other, contact);
   }
@@ -203,7 +193,8 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
             customPaint);
       }
 
-      customPaint.color = (isBoss) ? Colors.green[900]! : Colors.red[900]!;
+      customPaint.color =
+          (isBoss) ? const Color.fromARGB(255, 105, 3, 3) : Colors.red;
       double currentHealthWidth =
           healthBarWidth * (currentHealth / totalHealth!);
       if (isBoss) {

@@ -9,6 +9,7 @@ import 'package:flame_jam_2025/game/forge_components/earth/earth_gravity_compone
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 enum AsteroidState { firing, orbitingJupiter, spawned, destroyed }
 
@@ -21,7 +22,12 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
     this.impulseDirection,
     required this.startPosition,
     required this.startingDamage,
+    this.sizeScaling,
+    this.speedScaling,
   });
+  static final Logger _log = Logger('Asteroid Component');
+  final double? sizeScaling;
+  final double? speedScaling;
 
   AsteroidState? _asteroidState;
 
@@ -62,16 +68,19 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
   bool shouldRepel = false;
 
   late FixtureDef fixtureDefCircle;
-  late FixtureDef fixtureDefRect;
+  late FixtureDef fixtureDefCircle2;
 
   late double turningDirection;
   Random random = Random();
 
   @override
   Future<void> onLoad() {
+    currentDamage = startingDamage;
+    _log.info('Starting damage: $startingDamage');
+    // _log.info('Size Scaling: $sizeScaling');
+    // _log.info('Speed Scaling: $speedScaling');
     addBehaviors();
 
-    currentDamage = startingDamage;
     Color chosenColor;
     turningDirection = random.nextDouble() * 0.1;
     final brown = Colors.brown;
@@ -118,6 +127,7 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
         sate = other;
         dealtDamage = true;
         if (other.currentHealth >= currentDamage) {
+          _log.info('Current Damage: $currentDamage');
           other.controllerBehavior.takeDamage(currentDamage);
           controllerBehavior.explodeAsteroid(position, this);
         } else {
@@ -127,11 +137,12 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
         sate = other;
         dealtDamage = true;
         if (other.currentHealth >= currentDamage) {
+          _log.info('Current Damage: $currentDamage');
           other.controllerBehavior.takeDamage(currentDamage);
           controllerBehavior.explodeAsteroid(position, this);
         } else {
-          currentDamage = currentDamage - other.currentHealth;
           other.controllerBehavior.takeDamage(currentDamage);
+          currentDamage = currentDamage - other.currentHealth;
         }
       }
     }
@@ -150,27 +161,27 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
     );
 
     final body = world.createBody(def)..userData = this;
-    final circle = CircleShape(radius: .5, position: Vector2.zero());
-    fixtureDefCircle = FixtureDef(circle, isSensor: true);
-    fixtureDefRect = FixtureDef(
-      PolygonShape()
-        ..set(
-          [
-            Vector2(0, 0),
-            Vector2(.5, 0),
-            Vector2(.5, .7),
-            Vector2(0, .7),
-          ],
-        ),
-      isSensor: true,
+    final circle =
+        CircleShape(radius: .5 + (sizeScaling ?? 0), position: Vector2.zero());
+    final circle2 = CircleShape(
+      radius: .5 + (sizeScaling ?? 0),
+      position: Vector2(
+        0,
+        .2 + (sizeScaling ?? 0),
+      ),
     );
+
+    fixtureDefCircle = FixtureDef(circle, isSensor: true);
+    fixtureDefCircle2 = FixtureDef(circle2, isSensor: true);
+
     body.createFixture(fixtureDefCircle);
-    body.createFixture(fixtureDefRect);
+    body.createFixture(fixtureDefCircle2);
     body.synchronizeFixtures();
     body.setMassData(MassData()..mass = 1.2);
 
     if (isFiring) {
-      var speed = 25 + controllerBehavior.speedUpgradeIncrease;
+      var speed = 25 + (speedScaling ?? 0);
+      _log.info('Current Speed: $speed');
       var velocityX = game.targetPosition.x - body.position.x;
 
       var velocityY = game.targetPosition.y - body.position.y;
@@ -189,23 +200,6 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
 
     return body;
   }
-
-  // void fireAsteroid() {
-  //   state = AsteroidState.firing;
-  //   var speed = 25 + controllerBehavior.speedUpgradeIncrease;
-  //   var velocityX = game.targetPosition.x - body.position.x;
-
-  //   var velocityY = game.targetPosition.y - body.position.y;
-  //   var length = sqrt(velocityX * velocityX + velocityY * velocityY);
-
-  //   velocityX *= speed / length;
-
-  //   velocityY *= speed / length;
-
-  //   fireVel = Vector2(velocityX, velocityY);
-  //   body.clearForces();
-  //   body.applyLinearImpulse(fireVel);
-  // }
 
   void addBehaviors() {
     addAll(

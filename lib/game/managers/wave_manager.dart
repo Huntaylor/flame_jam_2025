@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
+import 'package:flame_jam_2025/game/forge_components/upgrades/upgrade_component.dart';
 import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:logging/logging.dart';
 
@@ -64,9 +65,25 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
 
   late SatelliteComponent bossSatellite;
 
-  List<SatelliteDifficulty> difficultyList = [];
+  late UpgradeComponent upgradeComponent;
+
+  List<UpgradeType> upgradeTypeList = [
+    UpgradeType.damage,
+    UpgradeType.quantity,
+    UpgradeType.size,
+    UpgradeType.speed,
+  ];
+  List<SatelliteDifficulty> difficultyList = [
+    SatelliteDifficulty.easy,
+    SatelliteDifficulty.medium,
+    SatelliteDifficulty.fast,
+    SatelliteDifficulty.hard,
+    SatelliteDifficulty.boss,
+  ];
 
   List<SatelliteComponent> enemies = [];
+
+  List<UpgradeComponent> currentUpgrades = [];
 
   List<SatelliteComponent> pendingSpawn = [];
 
@@ -80,30 +97,40 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
 
   late Timer spawnTimer;
   late Timer waveTimer;
+  late Timer upgradeTimer;
 
   @override
   FutureOr<void> onLoad() {
-    checkWaves();
+    upgradeTimer =
+        Timer(30, onTick: () => createUpgrade(), autoStart: true, repeat: true);
     waveTimer = Timer(
       5,
       onTick: () => onWaveComplete(),
       autoStart: false,
       repeat: false,
     );
-    spawnTimer = Timer(.01, onTick: () => spawnSatellites(), repeat: true);
-    spawnTimer.start();
+    checkWaves();
 
-    difficultyList.addAll([
-      SatelliteDifficulty.easy,
-      SatelliteDifficulty.medium,
-      SatelliteDifficulty.fast,
-      SatelliteDifficulty.hard,
-      SatelliteDifficulty.boss,
-    ]);
+    spawnTimer = Timer(1, onTick: () => spawnSatellites(), repeat: true);
+    spawnTimer.start();
 
     pendingSpawn = generateWaveEnemies();
 
     return super.onLoad();
+  }
+
+  void createUpgrade() {
+    // if (game.asteroidSpawnManager.isMaxSize) {}
+    if (currentUpgrades.length >= 2) {
+      return;
+    }
+    final randomUpgrade = rnd.nextInt(upgradeTypeList.length);
+    upgradeComponent = UpgradeComponent(
+      newPositon: Vector2(10, game.camera.visibleWorldRect.size.height / 2),
+      type: upgradeTypeList[randomUpgrade],
+    );
+    currentUpgrades.add(upgradeComponent);
+    game.world.add(upgradeComponent);
   }
 
   void checkWaves() {
@@ -113,8 +140,14 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
     } else {
       isBossRound = false;
     }
-
-    if (waveNumber > 10 && !introduceFastSate) {
+    if (waveNumber > 15) {
+      final suddenLaunch = rnd.nextInt(20);
+      if (suddenLaunch.isEven) {
+        waveTimer.limit = 0.2;
+      } else {
+        waveTimer.limit = 5;
+      }
+    } else if (waveNumber > 10 && !introduceFastSate) {
       waveType = WaveType.tutorialComplete;
       introduceFastSate = true;
     } else if (waveNumber > 7 && !introduceHardSate) {
@@ -127,6 +160,9 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
 
   @override
   void update(double dt) {
+    if (upgradeTimer.isRunning()) {
+      upgradeTimer.update(dt);
+    }
     if (spawnTimer.isRunning()) {
       game.waveTextComponent.text = 'Wave $waveNumber';
       spawnTimer.update(dt);

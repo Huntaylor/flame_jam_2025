@@ -7,13 +7,13 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
-import 'package:flame_jam_2025/game/components/asteroid_angle_component.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/forge_components/earth/earth_component.dart';
 import 'package:flame_jam_2025/game/forge_components/earth/earth_gravity_component.dart';
 import 'package:flame_jam_2025/game/forge_components/jupiter/jupiter_component.dart';
 import 'package:flame_jam_2025/game/forge_components/jupiter/jupiter_gravity_component.dart';
 import 'package:flame_jam_2025/game/forge_components/jupiter/jupiter_gravity_repellent_component.dart';
+import 'package:flame_jam_2025/game/forge_components/jupiter/jupiter_sanity_bar_component.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/managers/asteroid_spawn_manager.dart';
 import 'package:flame_jam_2025/game/managers/wave_manager.dart';
@@ -33,7 +33,7 @@ class SatefliesGame extends Forge2DGame
     firingPosition = Vector2(114, 59);
     asteroidAngle = Vector2(5, -20);
   }
-
+  static final Logger _log = Logger('Sateflies Game');
   final double smallDamage = 25;
   final double mediumDamage = 50;
   final double heavyDamage = 75;
@@ -57,8 +57,7 @@ class SatefliesGame extends Forge2DGame
   late JupiterComponent jupiterComponent;
   late JupiterGravityComponent jupiterGravityComponent;
   late JupiterGravityRepellentComponent jupiterGravityRepellentComponent;
-
-  late AsteroidAngleComponent asteroidAngleComponent;
+  late JupiterSanityBarComponent jupiterSanityBarComponent;
 
   late SatelliteComponent satelliteComponent;
 
@@ -116,6 +115,7 @@ class SatefliesGame extends Forge2DGame
     jupiterGravityRepellentComponent = JupiterGravityRepellentComponent();
 
     jupiterGravityComponent = JupiterGravityComponent();
+    jupiterSanityBarComponent = JupiterSanityBarComponent();
 
     earthComponent = EarthComponent();
 
@@ -146,6 +146,7 @@ class SatefliesGame extends Forge2DGame
         satellitesLeftTextComponent
           ..position = Vector2(
               1920 / 2, waveTextComponent.height + waveTextComponent.height),
+        // jupiterSanityBarComponent
       ],
     );
 
@@ -253,17 +254,20 @@ class SatefliesGame extends Forge2DGame
       final asteroid = asteroids.firstWhere((e) => e.isOrbiting);
       try {
         final newAsteroid = AsteroidComponent(
+          speedScaling: asteroid.speedScaling,
           startPosition: Vector2.zero(),
           startingDamage: asteroid.startingDamage,
           newPosition: asteroid.position,
           currentColor: asteroid.currentColor,
+          sizeScaling: asteroid.sizeScaling,
         );
         newAsteroid.state = AsteroidState.firing;
         asteroids.removeWhere((e) => e == asteroid);
         world.remove(asteroid);
         world.add(newAsteroid);
       } catch (e) {
-        Logger('Sateflies game -- onTapDown Asteroid Creation Exception: $e');
+        _log.severe(
+            'Sateflies game -- onTapDown Asteroid Creation Exception', e);
       }
     }
   }

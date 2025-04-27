@@ -1,15 +1,12 @@
 // ignore_for_file: file_names
 
-import 'dart:async';
-
 import 'package:flame/components.dart';
-import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
+import 'package:flame_jam_2025/game/sateflies_game.dart';
 import 'package:flutter/material.dart';
 
-class SateHealthbarComponent extends PositionComponent {
-  SateHealthbarComponent({required this.satelliteComponent, super.position});
-
-  final SatelliteComponent satelliteComponent;
+class JupiterSanityBarComponent extends PositionComponent
+    with HasGameReference<SatefliesGame> {
+  JupiterSanityBarComponent({super.position});
 
   final double healthBarWidth = 1.0;
   final double healthBarHeight = 0.5;
@@ -18,16 +15,8 @@ class SateHealthbarComponent extends PositionComponent {
 
   final Vector2 healthBarPosition = Vector2(-.5, -1);
 
-  late double currentHealth;
-  late double totalHealth;
-
-  @override
-  FutureOr<void> onLoad() {
-    currentHealth = satelliteComponent.totalHealth!;
-    totalHealth = satelliteComponent.totalHealth!;
-    add(satelliteComponent);
-    return super.onLoad();
-  }
+  double currentHealth = 30;
+  double totalHealth = 30;
 
   void updateHealth(double _currentHealth) {
     currentHealth = _currentHealth;
