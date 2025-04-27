@@ -46,7 +46,9 @@ class EarthComponent extends BodyComponent<SatellitesGame>
         size: Vector2.all(2.5),
         position: game.earthPosition,
         anchor: Anchor.center);
+
     add(spriteComponent);
+
     healthBarPosition.setFrom(game.earthPosition.clone());
     healthBarPosition.x = healthBarPosition.x - (healthBarWidth / 2);
     healthBarPosition.y = healthBarPosition.y - (healthBarWidth / 2);

@@ -31,10 +31,8 @@ class SatelliteControllerBehavior extends Behavior<SatelliteComponent>
   @override
   void update(double dt) {
     if (!game.camera.visibleWorldRect.containsPoint(parent.position) &&
-            !parent.isTooLate /* &&
-        !deathTimer.isRunning() */
-        ) {
-      destroySatellite();
+        !parent.isTooLate) {
+      destroySatellite(false);
     }
     if (deathTimer.isRunning()) {
       deathTimer.update(dt);
@@ -46,12 +44,15 @@ class SatelliteControllerBehavior extends Behavior<SatelliteComponent>
     if (!parent.isTooLate) {
       parent.currentHealth = parent.currentHealth - damage;
       if (parent.currentHealth <= 0 && parent.isAlive) {
-        destroySatellite();
+        destroySatellite(true);
       }
     }
   }
 
-  void destroySatellite() {
+  void destroySatellite(bool byPlayer) {
+    if (byPlayer && !game.destroyedSatellites.contains(parent)) {
+      game.destroyedSatellites.add(parent);
+    }
     parent.state = SatelliteState.destroyed;
     if (game.waveManager.contains(parent)) {
       game.waveSatellites.remove(parent);

@@ -42,7 +42,7 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
           game.orbitingSatellites.add(newSatellite);
         }
       } else {
-        other.controllerBehavior.destroySatellite();
+        other.controllerBehavior.destroySatellite(true);
       }
     } else if (other is AsteroidComponent && !other.isFiring) {
       other.state = AsteroidState.orbitingJupiter;

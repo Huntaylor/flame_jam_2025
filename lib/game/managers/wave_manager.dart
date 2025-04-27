@@ -111,8 +111,8 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
     );
     checkWaves();
 
-    spawnTimer = Timer(1, onTick: () => spawnSatellites(), repeat: true);
-    spawnTimer.start();
+    spawnTimer = Timer(1,
+        onTick: () => spawnSatellites(), repeat: true, autoStart: false);
 
     pendingSpawn = generateWaveEnemies();
 
@@ -203,7 +203,7 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
 
   void resetWave() {
     index = 0;
-    spawnTimer.start();
+    // spawnTimer.start();
     enemies.clear();
     pendingSpawn.clear();
   }

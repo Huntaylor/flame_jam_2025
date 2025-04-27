@@ -16,7 +16,6 @@ class SatellitesTheme {
       elevatedButtonTheme: _elevatedButtonTheme,
       outlinedButtonTheme: _outlinedButtonTheme,
       textTheme: _textTheme,
-      dialogBackgroundColor: SatellitesColors.whiteBackground,
       dialogTheme: _dialogTheme,
       tooltipTheme: _tooltipTheme,
       bottomSheetTheme: _bottomSheetTheme,

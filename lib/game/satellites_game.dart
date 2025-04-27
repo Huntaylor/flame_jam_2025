@@ -8,6 +8,7 @@ import 'package:flame/events.dart';
 import 'package:flame/parallax.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/components/mouse_render_component.dart';
+import 'package:flame_jam_2025/game/components/story_component.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/forge_components/earth/earth_component.dart';
 import 'package:flame_jam_2025/game/forge_components/earth/earth_gravity_component.dart';
@@ -65,6 +66,7 @@ class SatellitesGame extends Forge2DGame
   List<AsteroidComponent> asteroids = [];
   List<SatelliteComponent> orbitingSatellites = [];
   List<SatelliteComponent> waveSatellites = [];
+  List<SatelliteComponent> destroyedSatellites = [];
 
   double orbitingPower = 0;
   int currentLength = 0;
@@ -76,10 +78,12 @@ class SatellitesGame extends Forge2DGame
   late TextComponent waveTextComponent;
   late TextComponent satellitesLeftTextComponent;
 
+  late StoryComponent storyComponent;
+
   final rnd = Random();
 
   bool isGameStarted = false;
-  // bool isWaveOver = false;
+  bool hidHud = false;
 
   String waveText = '';
   String satellitesLeftText = '';
@@ -111,14 +115,21 @@ class SatellitesGame extends Forge2DGame
 
   @override
   FutureOr<void> onLoad() async {
+    storyComponent = StoryComponent(
+      position: Vector2(50, 200),
+    );
+
     setUpWaves();
+
     final parallax = await loadParallaxComponent(
       _imageNames,
       baseVelocity: Vector2(20, 0),
       velocityMultiplierDelta: Vector2(1.8, 1.0),
       filterQuality: FilterQuality.none,
     );
+
     add(parallax);
+
     await images.loadAllImages();
 
     add(MouseRenderComponent());
@@ -169,9 +180,9 @@ class SatellitesGame extends Forge2DGame
             waveTextComponent.height + waveTextComponent.height,
           ),
         jupiterSanityBarComponent..position = Vector2(800, 25),
+        storyComponent,
       ],
     );
-
     spawnAsteroids();
 
     world.addAll([
