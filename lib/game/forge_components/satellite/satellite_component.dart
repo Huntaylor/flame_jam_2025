@@ -9,14 +9,14 @@ import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_componen
 import 'package:flame_jam_2025/game/forge_components/jupiter/jupiter_gravity_component.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/behaviors/satellite_controller_behavior.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/behaviors/satellite_shapes.dart';
-import 'package:flame_jam_2025/game/sateflies_game.dart';
+import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 
 enum SatelliteState { destroyed, alive, orbiting, repelling }
 
 enum SatelliteDifficulty { easy, medium, hard, boss, fast }
 
-class SatelliteComponent extends BodyComponent<SatefliesGame>
+class SatelliteComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks, EntityMixin {
   SatelliteComponent({
     required this.isBelow,
@@ -45,6 +45,7 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
         totalHealth = heavyArmor;
       case SatelliteDifficulty.boss:
         getSpeed(3);
+
         totalHealth = bossArmor;
     }
   }
@@ -135,6 +136,11 @@ class SatelliteComponent extends BodyComponent<SatefliesGame>
 
   @override
   Future<void> onLoad() {
+    if (isBoss) {
+      if (game.waveManager.waveNumber > 10) {
+        totalHealth = bossArmor + (game.waveManager.waveNumber * 5);
+      }
+    }
     past10 = game.waveManager.waveNumber > 10;
 
     final maxTime = 40 / speedIncrease;

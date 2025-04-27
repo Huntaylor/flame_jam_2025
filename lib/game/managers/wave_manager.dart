@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/forge_components/upgrades/upgrade_component.dart';
-import 'package:flame_jam_2025/game/sateflies_game.dart';
+import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:logging/logging.dart';
 
 enum WaveType {
@@ -18,7 +18,7 @@ enum WaveState {
   end,
 }
 
-class WaveManager extends Component with HasGameReference<SatefliesGame> {
+class WaveManager extends Component with HasGameReference<SatellitesGame> {
   WaveManager({
     required this.impulseTargets,
   });
@@ -174,10 +174,10 @@ class WaveManager extends Component with HasGameReference<SatefliesGame> {
       if (isInProgress) {
         if (game.waveSatellites.length == 1) {
           game.satellitesLeftTextComponent.text =
-              '${game.waveSatellites.length} Sateflie left';
+              '${game.waveSatellites.length} Satellite left';
         } else {
           game.satellitesLeftTextComponent.text =
-              '${game.waveSatellites.length} Sateflies left';
+              '${game.waveSatellites.length} Satellites left';
         }
       }
       // Should be called one time and when all the current wave

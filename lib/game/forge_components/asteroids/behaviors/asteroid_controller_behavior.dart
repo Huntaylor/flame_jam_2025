@@ -10,11 +10,11 @@ import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/forge_components/upgrades/upgrade_component.dart';
 import 'package:flame_jam_2025/game/managers/asteroid_spawn_manager.dart';
-import 'package:flame_jam_2025/game/sateflies_game.dart';
+import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:logging/logging.dart';
 
 class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
-    with HasGameReference<SatefliesGame>, ContactCallbacks {
+    with HasGameReference<SatellitesGame>, ContactCallbacks {
   AsteroidControllerBehavior();
   static final Logger _log = Logger('Asteroid Controller Behavior');
   final rnd = Random();
@@ -55,30 +55,47 @@ class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
 
   void gainedSpeedUpgrade() {
     final speedScale = spawnManager.speedScaling;
-    (speedScale > spawnManager.maxSpeed)
-        ? spawnManager.speedScaling = spawnManager.maxSpeed
-        : spawnManager.speedScaling = spawnManager.speedScaling + 2;
+    if (speedScale > spawnManager.maxSpeed) {
+      spawnManager.speedScaling = spawnManager.maxSpeed;
+      game.waveManager.upgradeTypeList
+          .removeWhere((e) => e == UpgradeType.speed);
+    } else {
+      spawnManager.speedScaling = spawnManager.speedScaling + 2;
+    }
     _log.info('Speed Scaling: ${spawnManager.speedScaling}');
   }
 
   void gainedSizeUpgrade() {
     final newScaling = spawnManager.sizeScaling;
-    (newScaling > spawnManager.maxSize)
-        ? spawnManager.sizeScaling = spawnManager.maxSize
-        : spawnManager.sizeScaling = spawnManager.sizeScaling + .02;
+    if (newScaling > spawnManager.maxSize) {
+      game.waveManager.upgradeTypeList
+          .removeWhere((e) => e == UpgradeType.size);
+      spawnManager.sizeScaling = spawnManager.maxSize;
+    } else {
+      spawnManager.sizeScaling = spawnManager.sizeScaling + .02;
+    }
     _log.info('Size Scaling: ${spawnManager.sizeScaling}');
   }
 
   void gainedDamageUpgrade() {
     final damageScale = spawnManager.damageScaling;
-    (damageScale > spawnManager.maxDamage)
-        ? spawnManager.damageScaling = game.xHeavyDamage
-        : spawnManager.damageScaling = spawnManager.damageScaling + 5;
+    if (damageScale > spawnManager.maxDamage) {
+      game.waveManager.upgradeTypeList
+          .removeWhere((e) => e == UpgradeType.damage);
+      spawnManager.damageScaling = game.xHeavyDamage;
+    } else {
+      spawnManager.damageScaling = spawnManager.damageScaling + 5;
+    }
     _log.info('Damage Scaling: ${spawnManager.damageScaling}');
   }
 
   void gainedCountUpgrade() {
-    spawnManager.asterCountUpgrade = spawnManager.asterCountUpgrade + 2;
+    if (spawnManager.asterCountUpgrade == spawnManager.maxAsteroids) {
+      game.waveManager.upgradeTypeList
+          .removeWhere((e) => e == UpgradeType.quantity);
+    } else {
+      spawnManager.asterCountUpgrade = spawnManager.asterCountUpgrade + 1;
+    }
   }
 
   void gainedUpgrade(UpgradeType type) {

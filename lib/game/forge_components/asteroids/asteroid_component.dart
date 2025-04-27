@@ -7,13 +7,13 @@ import 'package:flame_jam_2025/game/forge_components/asteroids/behaviors/asteroi
 import 'package:flame_jam_2025/game/forge_components/earth/earth_component.dart';
 import 'package:flame_jam_2025/game/forge_components/earth/earth_gravity_component.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
-import 'package:flame_jam_2025/game/sateflies_game.dart';
+import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
 enum AsteroidState { firing, orbitingJupiter, spawned, destroyed }
 
-class AsteroidComponent extends BodyComponent<SatefliesGame>
+class AsteroidComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks, EntityMixin {
   AsteroidComponent({
     super.priority,
@@ -167,7 +167,7 @@ class AsteroidComponent extends BodyComponent<SatefliesGame>
       radius: .5 + (sizeScaling ?? 0),
       position: Vector2(
         0,
-        .2 + (sizeScaling ?? 0),
+        .2,
       ),
     );
 

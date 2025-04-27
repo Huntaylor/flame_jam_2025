@@ -1,11 +1,14 @@
+import 'dart:ui' as ui;
+
+import 'package:flame/components.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
-import 'package:flame_jam_2025/game/sateflies_game.dart';
+import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 
 enum EarthState { peaceful, war, destroyed }
 
-class EarthComponent extends BodyComponent<SatefliesGame>
+class EarthComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks {
   EarthComponent({super.priority})
       : super(paint: Paint()..color = Colors.lightBlue);
@@ -34,8 +37,16 @@ class EarthComponent extends BodyComponent<SatefliesGame>
 
   List<AsteroidComponent> damageDealtByList = [];
 
+  late ui.Image spriteImage;
+
   @override
-  Future<void> onLoad() {
+  Future<void> onLoad() async {
+    spriteImage = await game.images.load('planet03.png');
+    final spriteComponent = SpriteComponent.fromImage(spriteImage,
+        size: Vector2.all(2.5),
+        position: game.earthPosition,
+        anchor: Anchor.center);
+    add(spriteComponent);
     healthBarPosition.setFrom(game.earthPosition.clone());
     healthBarPosition.x = healthBarPosition.x - (healthBarWidth / 2);
     healthBarPosition.y = healthBarPosition.y - (healthBarWidth / 2);

@@ -1,5 +1,6 @@
+import 'package:app_ui/app_ui.dart';
 import 'package:flame/game.dart';
-import 'package:flame_jam_2025/game/sateflies_game.dart';
+import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -30,9 +31,10 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(textTheme: SatellitesTheme.standard.textTheme),
       home: Scaffold(
-        body: GameWidget<SatefliesGame>.controlled(
-          gameFactory: () => SatefliesGame(),
+        body: GameWidget<SatellitesGame>.controlled(
+          gameFactory: () => SatellitesGame(),
         ),
       ),
     );

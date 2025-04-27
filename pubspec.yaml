@@ -11,7 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  app_ui:
+    path: packages/app_ui
   cupertino_icons: ^1.0.8
   equatable_annotations: ^1.0.0
   flame: ^1.28.0
@@ -41,5 +42,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/sfx/
+    - assets/images/parallax/
+    - assets/fonts/
 
 scripts: derry.yaml

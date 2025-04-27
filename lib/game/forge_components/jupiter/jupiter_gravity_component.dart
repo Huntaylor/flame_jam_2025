@@ -4,10 +4,10 @@ import 'package:flame/components.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
-import 'package:flame_jam_2025/game/sateflies_game.dart';
+import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 
-class JupiterGravityComponent extends BodyComponent<SatefliesGame>
+class JupiterGravityComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks {
   JupiterGravityComponent({super.priority})
       : super(

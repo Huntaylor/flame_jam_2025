@@ -8,11 +8,11 @@ import 'package:flame_behaviors/flame_behaviors.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/behaviors/satellite_shapes.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
-import 'package:flame_jam_2025/game/sateflies_game.dart';
+import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 
 class SatelliteControllerBehavior extends Behavior<SatelliteComponent>
-    with HasGameReference<SatefliesGame>, ContactCallbacks {
+    with HasGameReference<SatellitesGame>, ContactCallbacks {
   SatelliteControllerBehavior();
 
   late Timer deathTimer;
@@ -31,9 +31,10 @@ class SatelliteControllerBehavior extends Behavior<SatelliteComponent>
   @override
   void update(double dt) {
     if (!game.camera.visibleWorldRect.containsPoint(parent.position) &&
-        !parent.isTooLate &&
-        !deathTimer.isRunning()) {
-      deathTimer.start();
+            !parent.isTooLate /* &&
+        !deathTimer.isRunning() */
+        ) {
+      destroySatellite();
     }
     if (deathTimer.isRunning()) {
       deathTimer.update(dt);

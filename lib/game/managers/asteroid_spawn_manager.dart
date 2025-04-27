@@ -3,12 +3,12 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
-import 'package:flame_jam_2025/game/sateflies_game.dart';
+import 'package:flame_jam_2025/game/satellites_game.dart';
 
 enum OrbitTarget { top, bottom, right }
 
 class AsteroidSpawnManager extends Component
-    with HasGameReference<SatefliesGame> {
+    with HasGameReference<SatellitesGame> {
   AsteroidSpawnManager();
 
   double sizeScaling = 0;

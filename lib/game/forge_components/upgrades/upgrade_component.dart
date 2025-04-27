@@ -5,12 +5,12 @@ import 'package:flame/extensions.dart';
 import 'package:flame/particles.dart' as parts;
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
-import 'package:flame_jam_2025/game/sateflies_game.dart';
+import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 
 enum UpgradeType { speed, size, damage, quantity }
 
-class UpgradeComponent extends BodyComponent<SatefliesGame>
+class UpgradeComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks {
   UpgradeComponent({
     required this.type,
