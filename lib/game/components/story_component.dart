@@ -163,9 +163,9 @@ class StoryComponent extends PositionComponent
           return (game.orbitingSatellites.length < 5)
               ? storyLine[8]
               : storyLine[7];
-        case 9:
-          return storyLine[3];
         case 10:
+          return storyLine[3];
+        case 11:
           return storyLine[4];
         case 14:
           return currentWinningCountry();

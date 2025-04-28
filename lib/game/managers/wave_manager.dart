@@ -102,7 +102,7 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
 
   int waveNumber = 1;
 
-  double stepUpSpeed = 1;
+  double stepUpSpeed = 0;
   double stepUpHealth = 1;
 
   final rnd = Random();
@@ -114,7 +114,7 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
   @override
   FutureOr<void> onLoad() {
     upgradeTimer =
-        Timer(35, onTick: () => createUpgrade(), autoStart: true, repeat: true);
+        Timer(20, onTick: () => createUpgrade(), autoStart: true, repeat: true);
     waveTimer = Timer(
       5,
       onTick: () => onWaveComplete(),
@@ -132,7 +132,7 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
   }
 
   void createUpgrade() {
-    if (currentUpgrades.length >= 2) {
+    if (currentUpgrades.length >= 3) {
       return;
     }
 
