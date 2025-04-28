@@ -114,7 +114,7 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
   @override
   FutureOr<void> onLoad() {
     upgradeTimer =
-        Timer(20, onTick: () => createUpgrade(), autoStart: true, repeat: true);
+        Timer(35, onTick: () => createUpgrade(), autoStart: true, repeat: true);
     waveTimer = Timer(
       5,
       onTick: () => onWaveComplete(),
@@ -147,7 +147,7 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
 
   void checkWaves() {
     if ((waveNumber % 10) == 0) {
-      stepUpSpeed = stepUpSpeed + .5;
+      stepUpSpeed = stepUpSpeed + 1;
       stepUpHealth = stepUpHealth + .5;
       _log.info('Step up Speed: $stepUpSpeed, Step up health: $stepUpHealth');
       isBossRound = true;

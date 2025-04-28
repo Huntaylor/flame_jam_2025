@@ -141,11 +141,11 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
 
   final double lightArmor = 150;
 
-  final double mediumArmor = 300;
+  final double mediumArmor = 350;
 
   final double heavyArmor = 650;
 
-  final double bossArmor = 1000;
+  final double bossArmor = 1250;
 
   late double currentHealth;
 

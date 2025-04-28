@@ -10,14 +10,10 @@ class VictoryOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const blackTextColor = Color.fromRGBO(7, 28, 182, 1);
     const whiteTextColor = Color.fromRGBO(255, 255, 255, 1.0);
 
     String destroyed =
         'Satellites destroyed: ${game.destroyedSatellites.length}';
-
-    String countryWon =
-        'The ${game.storyComponent.bestCountryName} had the most amount of satellites in orbit - ${game.storyComponent.bestCountryCount}';
 
     return Material(
       color: Colors.transparent,

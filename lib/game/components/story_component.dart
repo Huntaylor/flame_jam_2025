@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:app_ui/app_ui.dart';
 import 'package:flame/components.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
-import 'package:flame_jam_2025/game/managers/wave_manager.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -174,6 +173,40 @@ class StoryComponent extends PositionComponent
           return storyLine[5];
         case 20:
           return storyLine[6];
+        case 21:
+          return storyLine[9];
+        case 24:
+          return currentWinningCountry();
+        case 31:
+          return storyLine[10];
+        case 34:
+          return currentWinningCountry();
+        case 36:
+          return storyLine[12];
+        case 44:
+          return currentWinningCountry();
+        case 46:
+          return storyLine[13];
+        case 50:
+          return storyLine[11];
+        case 54:
+          return currentWinningCountry();
+        case 56:
+          return storyLine[14];
+        case 64:
+          return currentWinningCountry();
+        case 74:
+          return currentWinningCountry();
+        case 84:
+          return currentWinningCountry();
+        case 90:
+          return storyLine[11];
+        case 94:
+          return currentWinningCountry();
+        case 99:
+          return 'Breaking News! Jupiter has now reached Wave 100! Can this next wave be beaten?';
+        case 100:
+          return 'Breaking News! Note from developer, Congrats on getting this far! I hope you are enjoying the game. You should destroy earth by the way.';
         default:
           return '';
       }
@@ -261,7 +294,7 @@ class StoryComponent extends PositionComponent
     //2
     'Breaking News! Scientists are struggling to explain the recent asteroid impacts on the satellites. Investors are taking a risk to allow more durable satellites to be built.',
     //3
-    'Breaking News! Local mining facility has discovered a new metal, labeled the strongest metal on Earth! Critics mock the name, NotAlotium, chosen due to the lack of quanity. This has allowed an incredibly durable satellite to be made!',
+    'Breaking News! Local mining facility has discovered a new metal, labeled the strongest metal on Earth! Critics mock the name, NotAlotium, chosen due to the lack of quantity. This has allowed an incredibly durable satellite to be made!',
     //4
     'Breaking News! More satellites have been destroyed by the unprecedented changes in velocity of Jupiter\'s natural satellites\'. With financial reserves low, scientists have developed a cheaper, but faster satellite.',
     //5
@@ -269,9 +302,21 @@ class StoryComponent extends PositionComponent
     //6
     'Breaking News! Family owned plumbing business under investigation after alleged turtle animal abuse discoveries!',
     //7
-    'Breaking News! Many satellites are in Jupiter\'s orbit, science foundations arround the globe continue to receive an insurmountable amount of dontations to keep the foundations alive!',
+    'Breaking News! Many satellites are in Jupiter\'s orbit, science foundations around the globe continue to receive an insurmountable amount of donations to keep the foundations alive!',
     //8
-    'Breaking News! Even with a few satellites in Jupiter\'s orbit, science foundations arround the globe continue to receive an insurmountable amount of dontation from businesses to keep the foundations alive! Critics claim the science foundation is money laundering due to the lack of results.',
+    'Breaking News! Even with a few satellites in Jupiter\'s orbit, science foundations around the globe continue to receive an insurmountable amount of donations from businesses to keep the foundations alive! Critics claim the science foundation is money laundering due to the lack of results.',
+    //9
+    'Breaking News! Scientist Intern continues with wild claims that Jupiter is sentient and will destroy Earth. Plumbing expert of 50 years says that isn\'t a possibility',
+    //10
+    'Breaking News! Star gazing is rising in popularity among the rising generation.',
+    //11
+    'Breaking News! Congrats on getting this far! How\'s the performance?'
+        //12
+        'Breaking News! Toilet paper is now running out due to mass panic over the amount of asteroids being destroyed!'
+        //13
+        'Breaking News! Critics say they want their donations to go to something more useful. Countries willfully ignore said requests.'
+        //14
+        'Breaking News! The budget for the new popular movie series is said to be over the cost of all the satellites that have been destroyed as of now. Critics say it looks quote \'mid\'.'
   ];
   List<String> notBreaking = [
     'Breaking News! Scientists find more information about Jupiter, exciting the rest of the world to continue sending satellites!',

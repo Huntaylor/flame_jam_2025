@@ -8,7 +8,6 @@ import 'package:flame_jam_2025/game/forge_components/asteroids/behaviors/asteroi
 import 'package:flame_jam_2025/game/forge_components/earth/earth_component.dart';
 import 'package:flame_jam_2025/game/forge_components/earth/earth_gravity_component.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
-import 'package:flame_jam_2025/game/managers/wave_manager.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -108,10 +107,11 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
   @override
   void beginContact(Object other, Contact contact) {
     if (other is EarthGravityComponent) {
-      _log.info('Game manager state: ${game.waveManager.state}');
-      _log.info('CurrentDamage: $currentDamage');
-      if (currentDamage <= other.damageMinimum &&
-          !game.waveManager.isInProgress) {
+      _log.info('Game manager state: $currentDamage & ${other.damageMinimum}');
+      _log.info(game.waveManager.hasEnded);
+      if (!game.waveManager.hasEnded) {
+        controllerBehavior.explodeAsteroid(position, this);
+      } else if (other.damageMinimum >= currentDamage) {
         controllerBehavior.explodeAsteroid(position, this);
       }
     } else if (other is EarthComponent) {

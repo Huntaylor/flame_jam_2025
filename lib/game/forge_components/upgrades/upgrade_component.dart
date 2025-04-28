@@ -36,9 +36,9 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
   final newPaint = Paint();
 
   final particleShape = [
-    Vector2(0, .1) * 2,
-    Vector2(-.1, -.1) * 2,
-    Vector2(-.1, .1) * 2,
+    Vector2(0, .1),
+    Vector2(-.1, -.1),
+    Vector2(-.1, .1),
   ];
 
   final starShape = [
@@ -127,7 +127,7 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
       anchor: Anchor.center,
       particle: parts.ScalingParticle(
         to: 0,
-        lifespan: 5,
+        lifespan: 3,
         child: parts.ComponentParticle(
           component: PolygonComponent(particleShape)..setColor(newPaint.color),
         ),
@@ -143,7 +143,7 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
         position: position,
         anchor: Anchor.center,
         particle: parts.AcceleratedParticle(
-          lifespan: 10,
+          lifespan: .5,
           speed: game.randomVector2() / 5,
           child: parts.RotatingParticle(
             to: pi,
@@ -232,7 +232,7 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
 
     final corner = Vector2(game.camera.visibleWorldRect.size.width, 10);
 
-    var speed = 8;
+    var speed = 15;
     var velocityX = corner.x - body.position.x;
 
     var velocityY = corner.y - body.position.y;
