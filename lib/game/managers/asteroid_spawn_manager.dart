@@ -21,7 +21,7 @@ class AsteroidSpawnManager extends Component
   final double maxSpeed = 40;
   final int maxAsteroids = 50;
 
-  int currentMax = 12;
+  int currentMax = 10;
 
   int currentAsteroids = 0;
 

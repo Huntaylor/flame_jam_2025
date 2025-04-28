@@ -180,7 +180,7 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
     if (waveTimer.isRunning()) {
       waveTimer.update(dt);
     }
-    if (game.isGameStarted) {
+    if (game.isGameStarted && game.gameState != GameState.end) {
       if (isInProgress) {
         if (game.waveSatellites.length == 1) {
           game.satellitesLeftTextComponent.text =
@@ -200,6 +200,9 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
         state = WaveState.end;
         waveTimer.start();
       }
+    } else {
+      game.waveTextComponent.text = '';
+      game.satellitesLeftTextComponent.text = '';
     }
     super.update(dt);
   }

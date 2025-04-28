@@ -46,7 +46,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
         getSpeed(1);
         totalHealth = lightArmor;
       case SatelliteDifficulty.fast:
-        getSpeed(4);
+        getSpeed(5);
         totalHealth = cheapArmor;
       case SatelliteDifficulty.medium:
         getSpeed(2);
@@ -125,11 +125,21 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
   int jupiterGravityLeftX = 110;
   int jupiterGravityTopY = 35;
 
-  final double cheapArmor = 25;
-  final double lightArmor = 50;
-  final double mediumArmor = 75;
-  final double heavyArmor = 100;
-  final double bossArmor = 300;
+  // final double cheapArmor = 25;
+  // final double lightArmor = 50;
+  // final double mediumArmor = 75;
+  // final double heavyArmor = 100;
+  // final double bossArmor = 300;
+
+  final double cheapArmor = 100;
+
+  final double lightArmor = 250;
+
+  final double mediumArmor = 450;
+
+  final double heavyArmor = 650;
+
+  final double bossArmor = 1000;
 
   late double currentHealth;
 

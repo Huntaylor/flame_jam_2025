@@ -3,15 +3,18 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/particles.dart' as parts;
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 enum UpgradeType { speed, size, damage, quantity }
 
 class UpgradeComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks {
+  static final Logger _log = Logger('Upgrade Component');
   UpgradeComponent({
     required this.type,
     super.paint,
@@ -134,12 +137,21 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
 
   @override
   void beginContact(Object other, Contact contact) {
-    if (other is AsteroidComponent && other.isFiring) {
+    if (other is AsteroidComponent && other.isFiring && !isCollected) {
+      if (game.isPlaying) {
+        FlameAudio.play('powerUp.wav', volume: 0.1);
+      }
       isCollected = true;
       newParticles();
       other.controllerBehavior.gainedUpgrade(type);
 
-      game.world.remove(this);
+      try {
+        if (parent != null && parent!.isMounted) {
+          game.world.remove(this);
+        }
+      } catch (e) {
+        _log.severe('Error removing component', e);
+      }
     }
     super.beginContact(other, contact);
   }

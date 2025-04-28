@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:ui';
 
+import 'package:app_ui/app_ui.dart';
 import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
@@ -73,7 +73,7 @@ class SatellitesGame extends Forge2DGame
 
   double orbitingPower = 0;
   int currentLength = 0;
-  double totalHealth = 35;
+  double totalHealth = 40;
 
   late WaveManager waveManager;
   late AsteroidSpawnManager asteroidSpawnManager;
@@ -95,7 +95,6 @@ class SatellitesGame extends Forge2DGame
 
   String waveText = '';
   String satellitesLeftText = '';
-  String immersiveModeActive = '';
 
   Vector2? lineSegment;
 
@@ -122,8 +121,6 @@ class SatellitesGame extends Forge2DGame
     Vector2(129.0, 89.0),
     Vector2(124.0, 75.0),
     Vector2(128.0, 58.0),
-    Vector2(128.0, 58.0),
-    Vector2(128.0, 58.0),
   ];
 
   @override
@@ -147,7 +144,12 @@ class SatellitesGame extends Forge2DGame
 
     playButton = SatelliteHudButton(
       position: Vector2(50, 450),
-      button: TextComponent(text: 'Launch satellite'),
+      button: TextComponent(
+        text: 'Launch satellite',
+        textRenderer: TextPaint(
+            style:
+                SatellitesTextStyle.titleLarge.copyWith(color: Colors.white)),
+      ),
       onPressed: () {
         return gameState = GameState.start;
       },
@@ -155,32 +157,26 @@ class SatellitesGame extends Forge2DGame
 
     muteButton = SatelliteHudButton(
       position: Vector2(50, 500),
-      button: TextComponent(text: 'Immersive mode (Mute)'),
+      button: TextComponent(
+        text: 'Mute',
+        textRenderer: TextPaint(
+            style:
+                SatellitesTextStyle.titleLarge.copyWith(color: Colors.white)),
+      ),
       onPressed: () {
         isPlaying = !isPlaying;
+        _log.info('IsPlaying: $isPlaying');
         updateSound();
       },
     );
-    immersiveModeActive = isPlaying ? 'Off' : 'On';
-    immersiveModeComponent = TextBoxComponent(
-      textRenderer: TextPaint(
-        style: const TextStyle(
-          fontFamily: 'Xanmono',
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-      text: immersiveModeActive,
-      position: Vector2(50, 500),
-      anchor: Anchor.center,
-    )..debugMode = true;
 
     mouseRenderComponent = MouseRenderComponent();
 
-    addAll([playButton, muteButton, immersiveModeComponent]);
+    addAll([
+      playButton,
+      muteButton,
+    ]);
     add(mouseRenderComponent);
-    waveText = 'Wave ${waveManager.waveNumber}';
-    satellitesLeftText = '${waveSatellites.length} Satellite left';
 
     final viewfinder = Viewfinder();
 
@@ -200,10 +196,16 @@ class SatellitesGame extends Forge2DGame
     waveTextComponent = TextComponent(
       anchor: Anchor.center,
       text: waveText,
+      textRenderer: TextPaint(
+          style:
+              SatellitesTextStyle.displayMedium.copyWith(color: Colors.white)),
     );
     satellitesLeftTextComponent = TextComponent(
       anchor: Anchor.center,
       text: satellitesLeftText,
+      textRenderer: TextPaint(
+          style:
+              SatellitesTextStyle.displayMedium.copyWith(color: Colors.white)),
     );
 
     viewfinder
@@ -216,13 +218,17 @@ class SatellitesGame extends Forge2DGame
       world: world,
       viewfinder: viewfinder,
       hudComponents: [
-        FpsTextComponent(),
+        FpsTextComponent(
+          textRenderer: TextPaint(
+              style: SatellitesTextStyle.titleMedium
+                  .copyWith(color: Colors.white)),
+        ),
         waveTextComponent
           ..position = Vector2(1920 / 2, waveTextComponent.height),
         satellitesLeftTextComponent
           ..position = Vector2(
             1920 / 2,
-            waveTextComponent.height + waveTextComponent.height,
+            waveTextComponent.height + waveTextComponent.height + 8,
           ),
         jupiterSanityBarComponent..position = Vector2(800, 25),
         storyComponent,
@@ -242,7 +248,7 @@ class SatellitesGame extends Forge2DGame
   }
 
   updateSound() {
-    if (isPlaying) {
+    if (!isPlaying) {
       FlameAudio.bgm.pause();
     } else {
       FlameAudio.bgm.resume();
@@ -258,9 +264,11 @@ class SatellitesGame extends Forge2DGame
   @override
   void update(double dt) {
     if (gameState != GameState.end) {
-      immersiveModeComponent.text = isPlaying ? 'Off' : 'On';
       if (gameState != GameState.mainMenu && !isGameStarted) {
-        removeAll([playButton, immersiveModeComponent, muteButton]);
+        if (waveText.isEmpty) {
+          waveText = 'Wave ${waveManager.waveNumber}';
+        }
+        removeAll([playButton, muteButton]);
         isGameStarted = true;
         storyComponent.startStory();
       }
@@ -280,9 +288,12 @@ class SatellitesGame extends Forge2DGame
           // }
         }
         if (orbitingPower >= totalHealth && gameState != GameState.end) {
-          gameState == GameState.end;
+          gameState = GameState.end;
           overlays.add('Game Over');
-          remove(mouseRenderComponent);
+          if (mouseRenderComponent.parent != null &&
+              mouseRenderComponent.parent!.isMounted) {
+            remove(mouseRenderComponent);
+          }
         }
         currentLength = orbitingSatellites.length;
       }
@@ -349,7 +360,9 @@ class SatellitesGame extends Forge2DGame
           );
           newAsteroid.state = AsteroidState.firing;
           asteroids.removeWhere((e) => e == asteroid);
-          world.remove(asteroid);
+          if (asteroid.parent != null && asteroid.parent!.isMounted) {
+            world.remove(asteroid);
+          }
           world.add(newAsteroid);
         } catch (e) {
           _log.severe(

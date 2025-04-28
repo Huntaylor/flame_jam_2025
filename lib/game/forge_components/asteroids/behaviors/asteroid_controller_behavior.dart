@@ -97,6 +97,7 @@ class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
     } else {
       spawnManager.asterCountUpgrade = spawnManager.asterCountUpgrade + 1;
     }
+    _log.info('Count Increase: ${spawnManager.asterCountUpgrade}');
   }
 
   void gainedUpgrade(UpgradeType type) {
@@ -115,7 +116,7 @@ class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
     }
   }
 
-  void explodeAsteroid(Vector2 position, AsteroidComponent _component) async {
+  void explodeAsteroid(Vector2 position, AsteroidComponent _component) {
     if (game.isPlaying) {
       FlameAudio.play('explosion.wav', volume: 0.1);
     }
@@ -148,6 +149,12 @@ class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
       ),
     );
     game.add(explosionParticle);
-    game.world.remove(_component);
+    try {
+      if (_component.parent != null && _component.parent!.isMounted) {
+        game.world.remove(_component);
+      }
+    } catch (e) {
+      _log.severe('Error removing component', e);
+    }
   }
 }

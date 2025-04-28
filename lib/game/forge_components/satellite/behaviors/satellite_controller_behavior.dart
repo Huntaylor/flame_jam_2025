@@ -4,15 +4,18 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/particles.dart' as parts;
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_behaviors/flame_behaviors.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/behaviors/satellite_shapes.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 class SatelliteControllerBehavior extends Behavior<SatelliteComponent>
     with HasGameReference<SatellitesGame>, ContactCallbacks {
+  static final Logger _log = Logger('Satellite Controller Behavior');
   SatelliteControllerBehavior();
 
   late Timer deathTimer;
@@ -76,7 +79,10 @@ class SatelliteControllerBehavior extends Behavior<SatelliteComponent>
   }
 
   void _explodeSatellite(List<List<Vector2>> polyShapes, Vector2 position,
-      SatelliteComponent _component) async {
+      SatelliteComponent _component) {
+    if (game.isPlaying) {
+      FlameAudio.play('satellite_explosion.wav', volume: 0.1);
+    }
     List<ParticleSystemComponent> particles = [];
     for (var shape in polyShapes) {
       List<Vector2> scaleList = [];
@@ -103,6 +109,12 @@ class SatelliteControllerBehavior extends Behavior<SatelliteComponent>
       particles.add(explosionParticle);
     }
     game.addAll(particles);
-    game.world.remove(_component);
+    try {
+      if (_component.parent != null && _component.parent!.isMounted) {
+        game.world.remove(_component);
+      }
+    } catch (e) {
+      _log.severe('Error removing component', e);
+    }
   }
 }

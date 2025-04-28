@@ -1,14 +1,17 @@
 import 'dart:math';
 
 import 'package:flame/components.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 class JupiterGravityComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks {
+  static final Logger _log = Logger('Jupiter Gravity Component');
   JupiterGravityComponent({super.priority})
       : super(
           paint: Paint()
@@ -25,6 +28,9 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
   @override
   void beginContact(Object other, Contact contact) {
     if (other is SatelliteComponent && !other.isTooLate) {
+      if (game.isPlaying) {
+        FlameAudio.play('entering_orbit.wav', volume: 0.1);
+      }
       if (other.currentHealth > 0) {
         final newSatellite = SatelliteComponent(
           originCountry: other.originCountry,
@@ -36,8 +42,16 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
         other.state = SatelliteState.orbiting;
 
         game.world.remove(other);
-
-        game.world.add(newSatellite);
+        // try {
+        //   if (other.parent != null && other.parent!.isMounted) {
+        //     game.world.remove(other);
+        //   }
+        // } catch (e) {
+        //   _log.severe('Error removing component', e);
+        // }
+        if (!game.world.children.contains(newSatellite)) {
+          game.world.add(newSatellite);
+        }
 
         if (!game.orbitingSatellites.contains(newSatellite)) {
           game.orbitingSatellites.add(newSatellite);

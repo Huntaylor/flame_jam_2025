@@ -65,7 +65,8 @@ class StoryComponent extends PositionComponent
           growingBox: true,
         ),
         textRenderer: TextPaint(
-            style: SatellitesTextStyle.headlineSmall.copyWith(fontSize: 12)),
+            style: SatellitesTextStyle.headlineSmall
+                .copyWith(fontSize: 12, color: Colors.white)),
         text: storyLine[0],
         onComplete: () => readingTimer.start(),
         position: Vector2.zero(),
@@ -89,11 +90,8 @@ class StoryComponent extends PositionComponent
         growingBox: true,
       ),
       textRenderer: TextPaint(
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
+          style: SatellitesTextStyle.headlineSmall
+              .copyWith(fontSize: 12, color: Colors.white)),
       text: updateText(),
       onComplete: () => readingTimer.start(),
       position: Vector2.zero(),
@@ -157,6 +155,11 @@ class StoryComponent extends PositionComponent
     whiteCountry = 0;
     pinkCountry = 0;
     brownCountry = 0;
+
+    if (game.orbitingSatellites.isEmpty) {
+      return 'Breaking News! Jupiter is now labeled as the most costly planet to attempt to observe. Countries arround the world are still pushing to win this prize!';
+    }
+
     for (var satellite in game.orbitingSatellites) {
       switch (satellite.originCountry) {
         case SatelliteCountry.green:
@@ -209,17 +212,18 @@ class StoryComponent extends PositionComponent
     }
     bestCountryName = countryName;
     bestCountryCount = bestCountry.value;
+
     return 'The country with the most satellites in orbit is $countryName with ${bestCountry.value}';
   }
 
   List<String> storyLine = [
     'Breaking News! The Green Country has successfully launched the first satellite to Jupiter! Other countries are pushing to have the most satellites orbiting the planet.',
     'Breaking News! Scientist Intern makes wild claims that Jupiter is sentient after the launched satellite exploded!',
-    'Breaking News! Scientists are struggling to explain the recent asteroid impacts on the satellites. Investors are taking a risk to allow better satellites to be built.',
+    'Breaking News! Scientists are struggling to explain the recent asteroid impacts on the satellites. Investors are taking a risk to allow more durable satellites to be built.',
   ];
   List<String> notBreaking = [
     'Breaking News! Scientists find more information about Jupiter, exciting the rest of the world to continue sending satellites!',
-    'Breaking News! Scientists are baffled at the simplicity of getting a satellite to Jupiter. Investors  are throwing their money at science to make a profit, allowing for better satellites to be built!',
-    'Breaking News! The science foundation in all countries has an overflow of donations allowing for better and greater satellites! Critics claim the amount of satellites currently orbiting Jupiter could be too much for the planet to handle.',
+    'Breaking News! Scientists are baffled at the simplicity of getting a satellite to Jupiter. Investors  are throwing their money at science to make a profit, allowing for more satellites to be built!',
+    'Breaking News! The science foundation in all countries has an overflow of donations allowing for durable satellites! Critics claim the amount of satellites currently orbiting Jupiter could be too much for the planet to handle.',
   ];
 }
