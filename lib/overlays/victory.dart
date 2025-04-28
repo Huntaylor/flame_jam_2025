@@ -40,7 +40,7 @@ class VictoryOverlay extends StatelessWidget {
                 ),
               ),
               Text(
-                'Earth is destoryed.',
+                'Earth is destoryed, you got the hidden ending!',
                 style: TextStyle(
                   color: whiteTextColor,
                   fontSize: 12,

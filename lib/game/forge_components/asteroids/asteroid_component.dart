@@ -108,10 +108,10 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
   void beginContact(Object other, Contact contact) {
     if (other is EarthGravityComponent) {
       _log.info('Game manager state: $currentDamage & ${other.damageMinimum}');
-      _log.info(game.waveManager.hasEnded);
-      if (!game.waveManager.hasEnded) {
+      _log.info(other.damageMinimum > currentDamage);
+      if (game.waveManager.hasEnded) {
         controllerBehavior.explodeAsteroid(position, this);
-      } else if (other.damageMinimum >= currentDamage) {
+      } else if (other.damageMinimum > currentDamage) {
         controllerBehavior.explodeAsteroid(position, this);
       }
     } else if (other is EarthComponent) {

@@ -50,6 +50,8 @@ class StoryComponent extends PositionComponent
       repeat: false,
       onTick: () {
         isFinished = true;
+        if (game.earthComponent.isAtWar) isWarTriggered = true;
+
         game.waveManager.spawnTimer.start();
         removeStory();
       },
@@ -129,8 +131,6 @@ class StoryComponent extends PositionComponent
     if (isEarthAtWar) {
       _log.info('Triggering war');
       if (!isWarTriggered) {
-        isWarTriggered = true;
-
         return atWar;
       } else {
         return 'THIS IS WAR';
