@@ -1,12 +1,14 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 
-import 'package:flame/extensions.dart';
+import 'package:flame/components.dart';
 import 'package:flame_behaviors/flame_behaviors.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/behaviors/asteroid_controller_behavior.dart';
 import 'package:flame_jam_2025/game/forge_components/earth/earth_component.dart';
 import 'package:flame_jam_2025/game/forge_components/earth/earth_gravity_component.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
+import 'package:flame_jam_2025/game/managers/wave_manager.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -17,17 +19,20 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks, EntityMixin {
   AsteroidComponent({
     super.priority,
-    this.currentColor,
+    // this.currentColor,
     this.newPosition,
     this.impulseDirection,
     required this.startPosition,
     required this.startingDamage,
     this.sizeScaling,
     this.speedScaling,
+    this.spriteImage,
   });
   static final Logger _log = Logger('Asteroid Component');
   final double? sizeScaling;
   final double? speedScaling;
+
+  final ui.Image? spriteImage;
 
   AsteroidState? _asteroidState;
 
@@ -50,7 +55,7 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
   final Vector2? impulseDirection;
   final Vector2? newPosition;
   final Vector2 startPosition;
-  late Color? currentColor;
+  // late Color? currentColor;
 
   late Vector2 fireVel;
 
@@ -68,33 +73,23 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
   bool shouldRepel = false;
 
   late FixtureDef fixtureDefCircle;
-  late FixtureDef fixtureDefCircle2;
+  // late FixtureDef fixtureDefCircle2;
 
   late double turningDirection;
   Random random = Random();
 
   @override
   Future<void> onLoad() {
+    addSprite();
+    // currentDamage = 250;
     currentDamage = startingDamage;
-    _log.info('Starting damage: $startingDamage');
-    // _log.info('Size Scaling: $sizeScaling');
-    // _log.info('Speed Scaling: $speedScaling');
+    _log.info('Current damage: $currentDamage');
+
     addBehaviors();
 
-    Color chosenColor;
     turningDirection = random.nextDouble() * 0.1;
-    final brown = Colors.brown;
-    final blueGrey = Colors.blueGrey;
-    final rnd = Random();
-    {
-      if (rnd.nextBool()) {
-        chosenColor = brown;
-      } else {
-        chosenColor = blueGrey;
-      }
-    }
-    paint = Paint()..color = currentColor ?? chosenColor;
-    currentColor ??= chosenColor;
+
+    paint = ui.Paint()..color = Colors.brown;
 
     return super.onLoad();
   }
@@ -113,21 +108,22 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
   @override
   void beginContact(Object other, Contact contact) {
     if (other is EarthGravityComponent) {
-      if (currentDamage < other.damageMinimum) {
+      _log.info('Game manager state: ${game.waveManager.state}');
+      _log.info('CurrentDamage: $currentDamage');
+      if (currentDamage <= other.damageMinimum &&
+          !game.waveManager.isInProgress) {
         controllerBehavior.explodeAsteroid(position, this);
       }
-    }
-    if (other is EarthComponent) {
+    } else if (other is EarthComponent) {
       controllerBehavior.explodeAsteroid(position, this);
-    }
-    if (other is SatelliteComponent && isFiring) {
+    } else if (other is SatelliteComponent && isFiring) {
       if (other.isTooLate) {
         return;
       } else if (sate != null && other != sate) {
         sate = other;
         dealtDamage = true;
         if (other.currentHealth >= currentDamage) {
-          _log.info('Current Damage: $currentDamage');
+          // _log.info('Current Damage: $currentDamage');
           other.controllerBehavior.takeDamage(currentDamage);
           controllerBehavior.explodeAsteroid(position, this);
         } else {
@@ -163,19 +159,19 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
     final body = world.createBody(def)..userData = this;
     final circle =
         CircleShape(radius: .5 + (sizeScaling ?? 0), position: Vector2.zero());
-    final circle2 = CircleShape(
-      radius: .5 + (sizeScaling ?? 0),
-      position: Vector2(
-        0,
-        .2,
-      ),
-    );
+    // final circle2 = CircleShape(
+    //   radius: .5 /* + (sizeScaling ?? 0) */,
+    //   position: Vector2(
+    //     .2,
+    //     0,
+    //   ),
+    // );
 
     fixtureDefCircle = FixtureDef(circle, isSensor: true);
-    fixtureDefCircle2 = FixtureDef(circle2, isSensor: true);
+    // fixtureDefCircle2 = FixtureDef(circle2, isSensor: true);
 
     body.createFixture(fixtureDefCircle);
-    body.createFixture(fixtureDefCircle2);
+    // body.createFixture(fixtureDefCircle2);
     body.synchronizeFixtures();
     body.setMassData(MassData()..mass = 1.2);
 
@@ -199,6 +195,18 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
     }
 
     return body;
+  }
+
+  void addSprite() async {
+    final diameter = (.5 + (sizeScaling ?? 0)) * 2;
+
+    final spriteComponent =
+        SpriteComponent.fromImage(spriteImage ?? game.spriteImage!,
+            // srcSize: ,
+            size: Vector2.all(3 * diameter),
+            anchor: Anchor.center);
+
+    add(spriteComponent);
   }
 
   void addBehaviors() {

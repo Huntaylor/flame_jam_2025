@@ -32,6 +32,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
     super.priority,
     required this.difficulty,
     this.stepUpSpeed,
+    this.stepUpHealth,
     required this.newPosition,
     required this.isTooLate,
     required this.originCountry,
@@ -41,23 +42,27 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
       speedIncrease = speedIncrease + difficultySpeed + (stepUpSpeed ?? 0);
     }
 
+    void getHealth(double armorType) {
+      totalHealth = armorType * (stepUpHealth ?? 1);
+    }
+
     switch (difficulty) {
       case SatelliteDifficulty.easy:
         getSpeed(1);
-        totalHealth = lightArmor;
+        getHealth(lightArmor);
       case SatelliteDifficulty.fast:
         getSpeed(5);
-        totalHealth = cheapArmor;
+        getHealth(cheapArmor);
       case SatelliteDifficulty.medium:
         getSpeed(2);
-        totalHealth = mediumArmor;
+        getHealth(mediumArmor);
       case SatelliteDifficulty.hard:
         getSpeed(1.5);
-        totalHealth = heavyArmor;
+        getHealth(heavyArmor);
       case SatelliteDifficulty.boss:
         getSpeed(3);
 
-        totalHealth = bossArmor;
+        getHealth(bossArmor);
     }
 
     switch (originCountry) {
@@ -89,6 +94,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
   final Vector2 newPosition;
 
   final double? stepUpSpeed;
+  final double? stepUpHealth;
 
   final bool isBelow;
   bool isOutOfOrbit = false;
@@ -131,11 +137,11 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
   // final double heavyArmor = 100;
   // final double bossArmor = 300;
 
-  final double cheapArmor = 100;
+  final double cheapArmor = 75;
 
-  final double lightArmor = 250;
+  final double lightArmor = 150;
 
-  final double mediumArmor = 450;
+  final double mediumArmor = 300;
 
   final double heavyArmor = 650;
 

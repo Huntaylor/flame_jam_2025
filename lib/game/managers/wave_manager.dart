@@ -19,6 +19,7 @@ enum WaveState {
 }
 
 class WaveManager extends Component with HasGameReference<SatellitesGame> {
+  static final Logger _log = Logger('Wave Manager');
   WaveManager({
     required this.impulseTargets,
   });
@@ -101,7 +102,8 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
 
   int waveNumber = 1;
 
-  double stepUpSpeed = 0;
+  double stepUpSpeed = 1;
+  double stepUpHealth = 1;
 
   final rnd = Random();
 
@@ -112,7 +114,7 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
   @override
   FutureOr<void> onLoad() {
     upgradeTimer =
-        Timer(30, onTick: () => createUpgrade(), autoStart: true, repeat: true);
+        Timer(20, onTick: () => createUpgrade(), autoStart: true, repeat: true);
     waveTimer = Timer(
       5,
       onTick: () => onWaveComplete(),
@@ -130,13 +132,13 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
   }
 
   void createUpgrade() {
-    // if (game.asteroidSpawnManager.isMaxSize) {}
     if (currentUpgrades.length >= 2) {
       return;
     }
+
     final randomUpgrade = rnd.nextInt(upgradeTypeList.length);
     upgradeComponent = UpgradeComponent(
-      newPositon: Vector2(10, game.camera.visibleWorldRect.size.height / 2),
+      newPosition: Vector2(1, game.camera.visibleWorldRect.size.height / 2),
       type: upgradeTypeList[randomUpgrade],
     );
     currentUpgrades.add(upgradeComponent);
@@ -146,23 +148,25 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
   void checkWaves() {
     if ((waveNumber % 10) == 0) {
       stepUpSpeed = stepUpSpeed + .5;
+      stepUpHealth = stepUpHealth + .5;
+      _log.info('Step up Speed: $stepUpSpeed, Step up health: $stepUpHealth');
       isBossRound = true;
     } else {
       isBossRound = false;
     }
-    if (waveNumber > 15) {
+    if (waveNumber > 17) {
       final suddenLaunch = rnd.nextInt(20);
       if (suddenLaunch.isEven) {
         waveTimer.limit = 0.2;
       } else {
         waveTimer.limit = 5;
       }
+    } else if (waveNumber > 15 && !introduceHardSate) {
+      waveType = WaveType.tutorialComplete;
+      introduceHardSate = true;
     } else if (waveNumber > 10 && !introduceFastSate) {
       waveType = WaveType.tutorialComplete;
       introduceFastSate = true;
-    } else if (waveNumber > 7 && !introduceHardSate) {
-      waveType = WaveType.tutorialComplete;
-      introduceHardSate = true;
     } else if (waveNumber > 3 && !isTutorialComplete) {
       waveType = WaveType.tutorialComplete;
     }
@@ -221,8 +225,12 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
     pendingSpawn.clear();
   }
 
-  int calculateTotalWavePower() =>
-      (waveNumber == 1) ? waveNumber : (waveNumber * 2).toInt();
+  int calculateTotalWavePower() {
+    if (game.earthComponent.isAtWar) {
+      (waveNumber * 5).toInt();
+    }
+    return (waveNumber == 1) ? waveNumber : (waveNumber * 2).toInt();
+  }
 
   Map<SatelliteDifficulty, double> getEnemyProbabilities() {
     Map<SatelliteDifficulty, double> probabilities = {};
@@ -352,6 +360,8 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
       difficulty: type,
       isBelow: index <= 4,
       stepUpSpeed: stepUpSpeed,
+      stepUpHealth:
+          (game.earthComponent.isAtWar) ? stepUpHealth + 2 : stepUpHealth,
     )..setImpulseTarget = impulseTargets[index];
   }
 

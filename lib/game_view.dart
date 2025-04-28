@@ -3,6 +3,7 @@ import 'package:flame/game.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flame_jam_2025/overlays/game_over.dart';
 import 'package:flame_jam_2025/overlays/pause_menu.dart';
+import 'package:flame_jam_2025/overlays/victory.dart';
 import 'package:flutter/material.dart';
 
 class MyGame extends StatelessWidget {
@@ -47,6 +48,7 @@ class _GameViewState extends State<GameView> {
         body: GameWidget<SatellitesGame>.controlled(
           overlayBuilderMap: {
             'Game Over': (_, game) => GameOver(game: game),
+            'Victory': (_, game) => VictoryOverlay(game: game),
             'Pause Menu': (_, game) => PauseMenu(game: game),
           },
           gameFactory: () =>

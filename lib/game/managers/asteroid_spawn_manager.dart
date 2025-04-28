@@ -17,9 +17,9 @@ class AsteroidSpawnManager extends Component
 
 // Upgrades
   final double maxSize = 1.5;
-  final double maxDamage = 100;
+  final double maxDamage = 250;
   final double maxSpeed = 40;
-  final int maxAsteroids = 50;
+  final int maxAsteroids = 40;
 
   int currentMax = 10;
 
@@ -71,7 +71,7 @@ class AsteroidSpawnManager extends Component
   ];
 
   @override
-  FutureOr<void> onLoad() {
+  FutureOr<void> onLoad() async {
     spawnTimer = Timer(4,
         repeat: false, onTick: () => createNewAsteroids(), autoStart: false);
     individualTimer = Timer(.5,
@@ -171,6 +171,7 @@ class AsteroidSpawnManager extends Component
               : topTargetLocations;
 
           return AsteroidComponent(
+            spriteImage: game.spriteImage,
             impulseDirection: impulseDirection(
               orbitTargetLocation: targetList[rnd.nextInt(9)],
               spawnLocation: cycleLocation,

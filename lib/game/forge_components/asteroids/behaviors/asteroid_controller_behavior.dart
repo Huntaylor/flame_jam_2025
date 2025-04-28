@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
@@ -12,6 +11,7 @@ import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_componen
 import 'package:flame_jam_2025/game/forge_components/upgrades/upgrade_component.dart';
 import 'package:flame_jam_2025/game/managers/asteroid_spawn_manager.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
+import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
 class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
@@ -85,7 +85,7 @@ class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
           .removeWhere((e) => e == UpgradeType.damage);
       spawnManager.damageScaling = game.xHeavyDamage;
     } else {
-      spawnManager.damageScaling = spawnManager.damageScaling + 5;
+      spawnManager.damageScaling = spawnManager.damageScaling + 15;
     }
     _log.info('Damage Scaling: ${spawnManager.damageScaling}');
   }
@@ -137,7 +137,7 @@ class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
                   5,
                   Paint()
                     ..color = Color.lerp(
-                      _component.currentColor,
+                      Colors.brown,
                       const Color.fromARGB(255, 255, 0, 0),
                       particle.progress,
                     )!,

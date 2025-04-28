@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:app_ui/app_ui.dart';
 import 'package:flame/camera.dart';
@@ -24,7 +25,7 @@ import 'package:flame_jam_2025/game/managers/wave_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
-enum GameState { mainMenu, start, end }
+enum GameState { mainMenu, start, end, victory }
 
 class SatellitesGame extends Forge2DGame
     with TapCallbacks, MouseMovementDetector {
@@ -42,7 +43,7 @@ class SatellitesGame extends Forge2DGame
   final double smallDamage = 25;
   final double mediumDamage = 50;
   final double heavyDamage = 75;
-  final double xHeavyDamage = 100;
+  final double xHeavyDamage = 250;
   final double cometDamage = 200;
 
   late double jupiterSize;
@@ -78,11 +79,15 @@ class SatellitesGame extends Forge2DGame
   late WaveManager waveManager;
   late AsteroidSpawnManager asteroidSpawnManager;
 
+  late TextComponent muteTextComponent;
+
   late TextComponent waveTextComponent;
   late TextComponent satellitesLeftTextComponent;
   late TextComponent immersiveModeComponent;
 
   late StoryComponent storyComponent;
+
+  late SatelliteHudButton inGameMuteButton;
 
   late SatelliteHudButton playButton;
   late SatelliteHudButton muteButton;
@@ -103,6 +108,7 @@ class SatellitesGame extends Forge2DGame
   GameState gameState = GameState.mainMenu;
 
   Vector2 randomVector2() => (-Vector2.random(rnd) - Vector2.random(rnd)) * 100;
+  late ui.Image? spriteImage;
 
   final _imageNames = [
     ParallaxImageData('parallax/nebulawetstars.png'),
@@ -129,7 +135,6 @@ class SatellitesGame extends Forge2DGame
       position: Vector2(50, 200),
     );
     await setUpAudio();
-    setUpWaves();
 
     final parallax = await loadParallaxComponent(
       _imageNames,
@@ -142,13 +147,15 @@ class SatellitesGame extends Forge2DGame
 
     await images.loadAllImages();
 
+    spriteImage = await images.load('asteroid.png');
+
     playButton = SatelliteHudButton(
       position: Vector2(50, 450),
       button: TextComponent(
-        text: 'Launch satellite',
+        text: '-Launch satellite-',
         textRenderer: TextPaint(
-            style:
-                SatellitesTextStyle.titleLarge.copyWith(color: Colors.white)),
+            style: SatellitesTextStyle.titleLarge
+                .copyWith(color: Colors.blueGrey)),
       ),
       onPressed: () {
         return gameState = GameState.start;
@@ -158,15 +165,35 @@ class SatellitesGame extends Forge2DGame
     muteButton = SatelliteHudButton(
       position: Vector2(50, 500),
       button: TextComponent(
-        text: 'Mute',
+        text: '-Mute-',
         textRenderer: TextPaint(
-            style:
-                SatellitesTextStyle.titleLarge.copyWith(color: Colors.white)),
+            style: SatellitesTextStyle.headlineSmall
+                .copyWith(color: Colors.red[400])),
       ),
       onPressed: () {
         isPlaying = !isPlaying;
         _log.info('IsPlaying: $isPlaying');
         updateSound();
+      },
+    );
+
+    muteTextComponent = TextComponent(
+      text: '',
+      textRenderer: TextPaint(
+          style: SatellitesTextStyle.headlineSmall
+              .copyWith(fontSize: 18, color: Colors.red[400])),
+    );
+
+    inGameMuteButton = SatelliteHudButton(
+      size: Vector2(115, 25),
+      position: Vector2(1920 - 115, 50),
+      button: muteTextComponent,
+      onPressed: () {
+        if (isGameStarted) {
+          isPlaying = !isPlaying;
+          _log.info('IsPlaying: $isPlaying');
+          updateSound();
+        }
       },
     );
 
@@ -190,6 +217,7 @@ class SatellitesGame extends Forge2DGame
     );
 
     earthComponent = EarthComponent();
+    setUpWaves();
 
     earthGravityComponent = EarthGravityComponent();
 
@@ -197,21 +225,20 @@ class SatellitesGame extends Forge2DGame
       anchor: Anchor.center,
       text: waveText,
       textRenderer: TextPaint(
-          style:
-              SatellitesTextStyle.displayMedium.copyWith(color: Colors.white)),
+          style: SatellitesTextStyle.displayMedium
+              .copyWith(color: Colors.blueGrey[100])),
     );
     satellitesLeftTextComponent = TextComponent(
       anchor: Anchor.center,
       text: satellitesLeftText,
       textRenderer: TextPaint(
-          style:
-              SatellitesTextStyle.displayMedium.copyWith(color: Colors.white)),
+          style: SatellitesTextStyle.displayMedium
+              .copyWith(color: Colors.blueGrey[100])),
     );
 
     viewfinder
       ..anchor = Anchor.topLeft
       ..zoom = 10;
-
     camera = CameraComponent.withFixedResolution(
       width: 1920.0,
       height: 1027.0,
@@ -219,9 +246,10 @@ class SatellitesGame extends Forge2DGame
       viewfinder: viewfinder,
       hudComponents: [
         FpsTextComponent(
+          position: Vector2.all(10),
           textRenderer: TextPaint(
               style: SatellitesTextStyle.titleMedium
-                  .copyWith(color: Colors.white)),
+                  .copyWith(color: Colors.blueGrey[100])),
         ),
         waveTextComponent
           ..position = Vector2(1920 / 2, waveTextComponent.height),
@@ -232,6 +260,7 @@ class SatellitesGame extends Forge2DGame
           ),
         jupiterSanityBarComponent..position = Vector2(800, 25),
         storyComponent,
+        inGameMuteButton,
       ],
     );
     spawnAsteroids();
@@ -265,10 +294,15 @@ class SatellitesGame extends Forge2DGame
   void update(double dt) {
     if (gameState != GameState.end) {
       if (gameState != GameState.mainMenu && !isGameStarted) {
+        if (muteTextComponent.text.isEmpty) {
+          muteTextComponent.text = '-Mute-';
+        }
+
         if (waveText.isEmpty) {
           waveText = 'Wave ${waveManager.waveNumber}';
         }
         removeAll([playButton, muteButton]);
+
         isGameStarted = true;
         storyComponent.startStory();
       }
@@ -290,6 +324,14 @@ class SatellitesGame extends Forge2DGame
         if (orbitingPower >= totalHealth && gameState != GameState.end) {
           gameState = GameState.end;
           overlays.add('Game Over');
+          if (mouseRenderComponent.parent != null &&
+              mouseRenderComponent.parent!.isMounted) {
+            remove(mouseRenderComponent);
+          }
+        }
+        if (earthComponent.isDestroyed) {
+          gameState = GameState.end;
+          overlays.add('Victory');
           if (mouseRenderComponent.parent != null &&
               mouseRenderComponent.parent!.isMounted) {
             remove(mouseRenderComponent);
@@ -325,6 +367,7 @@ class SatellitesGame extends Forge2DGame
   void spawnAsteroids() {
     for (var vec in startingPoints) {
       final asteroid = AsteroidComponent(
+        spriteImage: spriteImage,
         startPosition: vec,
         startingDamage: smallDamage,
         priority: 3,
@@ -355,7 +398,7 @@ class SatellitesGame extends Forge2DGame
             startPosition: Vector2.zero(),
             startingDamage: asteroid.startingDamage,
             newPosition: asteroid.position,
-            currentColor: asteroid.currentColor,
+            // currentColor: asteroid.currentColor,
             sizeScaling: asteroid.sizeScaling,
           );
           newAsteroid.state = AsteroidState.firing;

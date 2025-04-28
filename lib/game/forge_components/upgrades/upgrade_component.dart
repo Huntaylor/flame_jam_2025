@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
@@ -18,53 +19,66 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
   UpgradeComponent({
     required this.type,
     super.paint,
-    required this.newPositon,
+    required this.newPosition,
   });
 
   final UpgradeType type;
 
   bool isCollected = false;
 
-  final Vector2 newPositon;
+  final Vector2 newPosition;
 
   late Timer deathTimer;
 
-  late TextComponent typeNameComponent;
-  late String text;
+  // late TextComponent typeNameComponent;
+  // late String text;
 
   final newPaint = Paint();
 
   final particleShape = [
-    Vector2(0, .1),
-    Vector2(-.1, -.1),
-    Vector2(-.1, .1),
+    Vector2(0, .1) * 2,
+    Vector2(-.1, -.1) * 2,
+    Vector2(-.1, .1) * 2,
   ];
 
   final starShape = [
     [
-      Vector2(0, 1),
-      Vector2(-0.5, 0),
-      Vector2(0.5, 0),
+      Vector2(0, 1) * 2,
+      Vector2(-0.5, 0) * 2,
+      Vector2(0.5, 0) * 2,
     ],
     [
-      Vector2(-0.5, 0),
-      Vector2(0, -1),
-      Vector2(0.5, 0),
+      Vector2(-0.5, 0) * 2,
+      Vector2(0, -1) * 2,
+      Vector2(0.5, 0) * 2,
     ],
     [
-      Vector2(-1, 0),
-      Vector2(0, 0.5),
-      Vector2(0, -0.5),
+      Vector2(-1, 0) * 2,
+      Vector2(0, 0.5) * 2,
+      Vector2(0, -0.5) * 2,
     ],
     [
-      Vector2(1, 0),
-      Vector2(0, 0.5),
-      Vector2(0, -0.5),
+      Vector2(1, 0) * 2,
+      Vector2(0, 0.5) * 2,
+      Vector2(0, -0.5) * 2,
     ],
   ];
 
+  late ui.Image damageImage;
+  late ui.Image quantityImage;
+  late ui.Image sizeImage;
+  late ui.Image speedImage;
+
+  late SpriteComponent spriteComponent;
+
   @override
-  Future<void> onLoad() {
+  Future<void> onLoad() async {
+    ui.Image spriteImage;
+    damageImage = await game.images.load('damage.png');
+    quantityImage = await game.images.load('quantity.png');
+    sizeImage = await game.images.load('size_increase.png');
+    speedImage = await game.images.load('speed_up_sprite.png');
+
     deathTimer = Timer(
       3,
       onTick: () => game.world.remove(this),
@@ -74,21 +88,33 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
     switch (type) {
       case UpgradeType.speed:
         paint.color = Colors.yellow;
-        text = 'Speed';
-
+        // text = 'Speed';
+        spriteImage = speedImage;
       case UpgradeType.size:
         paint.color = Colors.cyan;
-        text = 'Size';
+        // text = 'Size';
+        spriteImage = sizeImage;
       case UpgradeType.damage:
         paint.color = Colors.orange;
-        text = 'Damage';
+        // text = 'Damage';
+        spriteImage = damageImage;
       case UpgradeType.quantity:
         paint.color = Colors.teal;
-        text = 'Quantity';
+        // text = 'Quantity';
+        spriteImage = quantityImage;
     }
-    typeNameComponent = TextComponent(
-        text: text, anchor: Anchor.center, scale: Vector2.all(.05));
-    game.world.add(typeNameComponent);
+
+    spriteComponent = SpriteComponent.fromImage(spriteImage,
+        size: Vector2.all(2),
+        position: game.earthPosition,
+        priority: 5,
+        anchor: Anchor.center);
+
+    game.world.add(spriteComponent);
+
+    // typeNameComponent = TextComponent(
+    //     text: text, anchor: Anchor.center, scale: Vector2.all(.05));
+    // game.world.add(typeNameComponent);
 
     newPaint.color = paint.color;
 
@@ -100,6 +126,8 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
       position: _position.clone(),
       anchor: Anchor.center,
       particle: parts.ScalingParticle(
+        to: 0,
+        lifespan: 5,
         child: parts.ComponentParticle(
           component: PolygonComponent(particleShape)..setColor(newPaint.color),
         ),
@@ -115,7 +143,7 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
         position: position,
         anchor: Anchor.center,
         particle: parts.AcceleratedParticle(
-          lifespan: .5,
+          lifespan: 10,
           speed: game.randomVector2() / 5,
           child: parts.RotatingParticle(
             to: pi,
@@ -161,13 +189,13 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
     if (game.waveManager.currentUpgrades.contains(this)) {
       game.waveManager.currentUpgrades.remove(this);
     }
-    game.world.remove(typeNameComponent);
+    game.world.remove(spriteComponent);
     super.onRemove();
   }
 
   @override
   void update(double dt) {
-    typeNameComponent.position = position;
+    spriteComponent.position = position;
     if (!isCollected) {
       addParticles(position);
     }
@@ -190,12 +218,15 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
       userData: this,
       isAwake: true,
       type: BodyType.dynamic,
-      position: newPositon,
+      position: newPosition,
     );
 
     final body = world.createBody(def)..userData = this;
     for (var shape in starShape) {
-      final fixtureDef = FixtureDef(PolygonShape()..set(shape), isSensor: true);
+      final fixtureDef = FixtureDef(
+        PolygonShape()..set(shape),
+        isSensor: true,
+      );
       body.createFixture(fixtureDef);
     }
 

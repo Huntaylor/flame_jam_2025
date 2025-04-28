@@ -26,6 +26,9 @@ class StoryComponent extends PositionComponent
   late Timer readingTimer;
 
   String bestCountryName = '';
+
+  bool isWarTriggered = false;
+
   int bestCountryCount = 0;
 
   int greenCountry = 0;
@@ -66,7 +69,7 @@ class StoryComponent extends PositionComponent
         ),
         textRenderer: TextPaint(
             style: SatellitesTextStyle.headlineSmall
-                .copyWith(fontSize: 12, color: Colors.white)),
+                .copyWith(fontSize: 12, color: Colors.blueGrey[100])),
         text: storyLine[0],
         onComplete: () => readingTimer.start(),
         position: Vector2.zero(),
@@ -79,6 +82,7 @@ class StoryComponent extends PositionComponent
   }
 
   void addStory() {
+    _log.info('Adding Story');
     currentWinningCountry();
     _log.info(updateText());
 
@@ -91,7 +95,7 @@ class StoryComponent extends PositionComponent
       ),
       textRenderer: TextPaint(
           style: SatellitesTextStyle.headlineSmall
-              .copyWith(fontSize: 12, color: Colors.white)),
+              .copyWith(fontSize: 12, color: Colors.blueGrey[100])),
       text: updateText(),
       onComplete: () => readingTimer.start(),
       position: Vector2.zero(),
@@ -100,26 +104,41 @@ class StoryComponent extends PositionComponent
 
   @override
   void update(double dt) {
-    if (readingTimer.isRunning()) {
-      readingTimer.update(dt);
-    }
-    if (game.waveManager.state == WaveState.end &&
-        isFinished &&
-        game.gameState != GameState.end) {
-      isFinished = false;
-      addStory();
+    if (game.gameState != GameState.end || !game.earthComponent.isDestroyed) {
+      if (readingTimer.isRunning()) {
+        readingTimer.update(dt);
+      }
+      if (game.waveManager.hasEnded &&
+          isFinished &&
+          game.gameState != GameState.end &&
+          !game.earthComponent.isDestroyed) {
+        isFinished = false;
+        addStory();
+      }
     }
     super.update(dt);
   }
 
   String updateText() {
+    final isEarthAtWar = game.earthComponent.isAtWar;
+    final isEarthPeaceful = game.earthComponent.isPeaceful;
     _log.info('Update Text');
 
 //?game.waveManager.waveNumber will be the wave that was just completed
 
     int index = game.waveManager.waveNumber + 1;
-    if (game.orbitingSatellites.isNotEmpty &&
-        game.destroyedSatellites.isEmpty) {
+    if (isEarthAtWar) {
+      _log.info('Triggering war');
+      if (!isWarTriggered) {
+        isWarTriggered = true;
+
+        return atWar;
+      } else {
+        return 'THIS IS WAR';
+      }
+    } else if (game.orbitingSatellites.isNotEmpty &&
+        game.destroyedSatellites.isEmpty &&
+        isEarthPeaceful) {
       _log.info('Current index: $index');
       switch (index) {
         case 2:
@@ -130,21 +149,36 @@ class StoryComponent extends PositionComponent
           return notBreaking[2];
         case 14:
           return currentWinningCountry();
+
         default:
           return '';
       }
-    } else {
+    } else if (isEarthPeaceful) {
       _log.info('Current index: $index');
       switch (index) {
         case 2:
           return storyLine[1];
         case 4:
           return storyLine[2];
+        case 6:
+          return (game.orbitingSatellites.length < 5)
+              ? storyLine[8]
+              : storyLine[7];
+        case 9:
+          return storyLine[3];
+        case 10:
+          return storyLine[4];
         case 14:
           return currentWinningCountry();
+        case 15:
+          return storyLine[5];
+        case 20:
+          return storyLine[6];
         default:
           return '';
       }
+    } else {
+      return (isEarthPeaceful) ? '' : 'THIS IS WAR';
     }
   }
 
@@ -216,14 +250,32 @@ class StoryComponent extends PositionComponent
     return 'The country with the most satellites in orbit is $countryName with ${bestCountry.value}';
   }
 
+  String atWar =
+      'BREAKING NEWS!! The asteroid named Catastrophe has just struck Earth! Contingency Sentient Jupiter is now active, all countries around the globe have come together to gather data needed to destroy Jupiter. A significant increase in satellites is to come. ';
+
   List<String> storyLine = [
+    //0
     'Breaking News! The Green Country has successfully launched the first satellite to Jupiter! Other countries are pushing to have the most satellites orbiting the planet.',
+    //1
     'Breaking News! Scientist Intern makes wild claims that Jupiter is sentient after the launched satellite exploded!',
+    //2
     'Breaking News! Scientists are struggling to explain the recent asteroid impacts on the satellites. Investors are taking a risk to allow more durable satellites to be built.',
+    //3
+    'Breaking News! Local mining facility has discovered a new metal, labeled the strongest metal on Earth! Critics mock the name, NotAlotium, chosen due to the lack of quanity. This has allowed an incredibly durable satellite to be made!',
+    //4
+    'Breaking News! More satellites have been destroyed by the unprecedented changes in velocity of Jupiter\'s natural satellites\'. With financial reserves low, scientists have developed a cheaper, but faster satellite.',
+    //5
+    'Breaking News! Major investor went all in for the science foundation! This has allowed for a much more durable satellite to be produced.',
+    //6
+    'Breaking News! Family owned plumbing business under investigation after alleged turtle animal abuse discoveries!',
+    //7
+    'Breaking News! Many satellites are in Jupiter\'s orbit, science foundations arround the globe continue to receive an insurmountable amount of dontations to keep the foundations alive!',
+    //8
+    'Breaking News! Even with a few satellites in Jupiter\'s orbit, science foundations arround the globe continue to receive an insurmountable amount of dontation from businesses to keep the foundations alive! Critics claim the science foundation is money laundering due to the lack of results.',
   ];
   List<String> notBreaking = [
     'Breaking News! Scientists find more information about Jupiter, exciting the rest of the world to continue sending satellites!',
     'Breaking News! Scientists are baffled at the simplicity of getting a satellite to Jupiter. Investors  are throwing their money at science to make a profit, allowing for more satellites to be built!',
-    'Breaking News! The science foundation in all countries has an overflow of donations allowing for durable satellites! Critics claim the amount of satellites currently orbiting Jupiter could be too much for the planet to handle.',
+    'Breaking News! The science foundations in all countries has an overflow of donations allowing for durable satellites! Critics claim the amount of satellites currently orbiting Jupiter could be too much for the planet to handle.',
   ];
 }

@@ -1,18 +1,24 @@
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
+import 'package:flame/particles.dart' as parts;
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 enum EarthState { peaceful, war, destroyed }
 
 class EarthComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks {
+  static final Logger _log = Logger('Earth Component');
   EarthComponent({super.priority})
       : super(paint: Paint()..color = Colors.lightBlue);
 
+  final rnd = Random();
   EarthState? _earthState;
 
   bool get isPeaceful => state == EarthState.peaceful;
@@ -27,7 +33,7 @@ class EarthComponent extends BodyComponent<SatellitesGame>
 
   final healthBarPaint = Paint();
 
-  final double totalHealth = 2500;
+  final double totalHealth = 10000;
 
   double currentHealth = 0;
 
@@ -39,10 +45,12 @@ class EarthComponent extends BodyComponent<SatellitesGame>
 
   late ui.Image spriteImage;
 
+  late SpriteComponent spriteComponent;
+
   @override
   Future<void> onLoad() async {
     spriteImage = await game.images.load('planet03.png');
-    final spriteComponent = SpriteComponent.fromImage(spriteImage,
+    spriteComponent = SpriteComponent.fromImage(spriteImage,
         size: Vector2.all(2.5),
         position: game.earthPosition,
         anchor: Anchor.center);
@@ -55,6 +63,15 @@ class EarthComponent extends BodyComponent<SatellitesGame>
 
     currentHealth = totalHealth;
     return super.onLoad();
+  }
+
+  @override
+  void update(double dt) {
+    if (isAtWar && currentHealth <= 0) {
+      state = EarthState.destroyed;
+      explodeEarth();
+    }
+    super.update(dt);
   }
 
   @override
@@ -85,13 +102,14 @@ class EarthComponent extends BodyComponent<SatellitesGame>
       state = EarthState.war;
       if (!damageDealtByList.contains(other)) {
         currentHealth = currentHealth - other.currentDamage;
-        if (currentHealth >= 0) {
+        if (currentHealth <= 0) {
           currentHealth = 0;
           state = EarthState.destroyed;
         }
         damageDealtByList.add(other);
       }
     }
+    _log.info('Earth State: $state');
     super.beginContact(other, contact);
   }
 
@@ -108,7 +126,7 @@ class EarthComponent extends BodyComponent<SatellitesGame>
   @override
   void render(Canvas canvas) {
     if (isAtWar) {
-      canvas.save();
+      // canvas.save();
       healthBarPaint.color = Colors.white;
       canvas.drawRect(
           Rect.fromLTWH(healthBarPosition.x, healthBarPosition.y,
@@ -122,9 +140,52 @@ class EarthComponent extends BodyComponent<SatellitesGame>
           Rect.fromLTWH(healthBarPosition.x, healthBarPosition.y,
               currentHealthWidth, healthBarHeight),
           healthBarPaint);
-      canvas.restore();
+      // canvas.restore();
     }
 
     super.render(canvas);
+  }
+
+  void explodeEarth() {
+    if (game.isPlaying) {
+      FlameAudio.play('explosion.wav', volume: 0.1);
+    }
+    final explosionParticle = ParticleSystemComponent(
+      position: game.camera.localToGlobal(position),
+      anchor: Anchor.center,
+      particle: parts.Particle.generate(
+        count: 15,
+        generator: (i) => parts.AcceleratedParticle(
+          lifespan: 2,
+          speed: game.randomVector2(),
+          child: parts.ScalingParticle(
+            to: 0,
+            child: parts.ComputedParticle(
+              renderer: (canvas, particle) {
+                canvas.drawCircle(
+                  Offset.zero,
+                  5,
+                  Paint()
+                    ..color = Color.lerp(
+                      Colors.lightBlue,
+                      const Color.fromARGB(255, 255, 0, 0),
+                      particle.progress,
+                    )!,
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    remove(spriteComponent);
+    game.add(explosionParticle);
+    try {
+      if (parent != null && parent!.isMounted) {
+        game.world.remove(this);
+      }
+    } catch (e) {
+      _log.severe('Error removing component', e);
+    }
   }
 }
