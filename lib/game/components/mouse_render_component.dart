@@ -10,6 +10,32 @@ class MouseRenderComponent extends Component
   MouseRenderComponent();
 
   final newPaint = Paint();
+  double timeElapsed = 0;
+  static const timePerFrame = 1 / 20;
+
+  double first = 20;
+  double second = 30;
+  double firstInitial = 20;
+  double secondInitial = 30;
+
+  // @override
+  // void update(double dt) {
+  //   timeElapsed += dt;
+
+  //   if (timeElapsed > timePerFrame) {
+  //     timeElapsed -= timePerFrame;
+  //     first = first + 10;
+  //     second = second + 30;
+
+  //     // if (first > firstInitial) {
+  //     //   first = 20;
+  //     // }
+  //     // if (second > secondInitial) {
+  //     //   second = 30;
+  //     // }
+  //     super.update(timePerFrame);
+  //   }
+  // }
 
   @override
   void render(Canvas canvas) {
@@ -27,10 +53,11 @@ class MouseRenderComponent extends Component
               .toOffset(),
           p2: game.lineSegment!.toOffset(),
           paint: newPaint..color = Colors.amber,
-          pattern: [20, 30],
+          pattern: [first, second],
         );
       }
       canvas.restore();
+
       super.render(canvas);
     }
   }
@@ -48,6 +75,7 @@ class MouseRenderComponent extends Component
     final points = <Offset>[];
     double t = 0;
     int i = 0;
+
     while (t < 1) {
       points.add(Offset.lerp(p1, p2, t)!);
       t += normalizedPattern[i++]; // dashWidth

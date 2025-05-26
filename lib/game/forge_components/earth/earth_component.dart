@@ -3,7 +3,6 @@ import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
 import 'package:flame/particles.dart' as parts;
-import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
@@ -147,9 +146,7 @@ class EarthComponent extends BodyComponent<SatellitesGame>
   }
 
   void explodeEarth() {
-    if (game.isPlaying) {
-      FlameAudio.play('explosion.wav', volume: 0.1);
-    }
+    game.audioComponent.onAsteroidDestoryed();
     final explosionParticle = ParticleSystemComponent(
       position: game.camera.localToGlobal(position),
       anchor: Anchor.center,

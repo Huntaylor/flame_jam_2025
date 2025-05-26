@@ -17,7 +17,6 @@ class AsteroidSpawnManager extends Component
 
 // Upgrades
   final double maxSize = 1.5;
-  final double maxDamage = 250;
   final double maxSpeed = 40;
   final int maxAsteroids = 40;
 

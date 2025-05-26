@@ -59,7 +59,7 @@ class VictoryOverlay extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {
                   game.gameState == GameState.mainMenu;
-                  Navigator.of(context).pushNamed('NewGame');
+                  Navigator.of(context).pushReplacementNamed('NewGame');
                   game.overlays.remove('Victory');
                 },
                 style: ElevatedButton.styleFrom(

@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flame/components.dart';
-import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
@@ -28,9 +27,7 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
   @override
   void beginContact(Object other, Contact contact) {
     if (other is SatelliteComponent && !other.isTooLate) {
-      if (game.isPlaying) {
-        FlameAudio.play('entering_orbit.wav', volume: 0.1);
-      }
+      game.audioComponent.onEnterOrbit();
       if (other.currentHealth > 0) {
         final newSatellite = SatelliteComponent(
           originCountry: other.originCountry,
@@ -42,13 +39,6 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
         other.state = SatelliteState.orbiting;
 
         game.world.remove(other);
-        // try {
-        //   if (other.parent != null && other.parent!.isMounted) {
-        //     game.world.remove(other);
-        //   }
-        // } catch (e) {
-        //   _log.severe('Error removing component', e);
-        // }
         if (!game.world.children.contains(newSatellite)) {
           game.world.add(newSatellite);
         }
@@ -62,7 +52,6 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
     } else if (other is AsteroidComponent && !other.isFiring) {
       other.state = AsteroidState.orbitingJupiter;
       if (!game.asteroids.contains(other)) {
-        // print('does not contain');
         game.asteroids.add(other);
       }
     } else if (other is AsteroidComponent && other.isFiring) {

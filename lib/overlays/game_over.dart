@@ -14,6 +14,7 @@ class GameOver extends StatelessWidget {
 
     String destroyed =
         'Satellites destroyed: ${game.destroyedSatellites.length}';
+    String waveEnded = 'Wave: ${game.waveManager.waveNumber}';
 
     String countryWon =
         'The ${game.storyComponent.bestCountryName} had the most amount of satellites in orbit - ${game.storyComponent.bestCountryCount}';
@@ -43,6 +44,13 @@ class GameOver extends StatelessWidget {
                 ),
               ),
               Text(
+                waveEnded,
+                style: TextStyle(
+                  color: whiteTextColor,
+                  fontSize: 12,
+                ),
+              ),
+              Text(
                 destroyed,
                 style: TextStyle(
                   color: whiteTextColor,
@@ -62,7 +70,7 @@ class GameOver extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {
                   game.gameState == GameState.mainMenu;
-                  Navigator.of(context).pushNamed('NewGame');
+                  Navigator.of(context).pushReplacementNamed('NewGame');
                   game.overlays.remove('Game Over');
                 },
                 style: ElevatedButton.styleFrom(

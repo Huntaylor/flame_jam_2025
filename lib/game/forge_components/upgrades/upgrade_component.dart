@@ -4,7 +4,6 @@ import 'dart:ui' as ui;
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/particles.dart' as parts;
-import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
@@ -166,9 +165,7 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
   @override
   void beginContact(Object other, Contact contact) {
     if (other is AsteroidComponent && other.isFiring && !isCollected) {
-      if (game.isPlaying) {
-        FlameAudio.play('powerUp.wav', volume: 0.1);
-      }
+      game.audioComponent.onPowerUp();
       isCollected = true;
       newParticles();
       other.controllerBehavior.gainedUpgrade(type);

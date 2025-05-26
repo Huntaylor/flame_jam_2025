@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/particles.dart' as parts;
-import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_behaviors/flame_behaviors.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
@@ -80,14 +79,9 @@ class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
 
   void gainedDamageUpgrade() {
     final damageScale = spawnManager.damageScaling;
-    if (damageScale > spawnManager.maxDamage) {
-      game.waveManager.upgradeTypeList
-          .removeWhere((e) => e == UpgradeType.damage);
-      spawnManager.damageScaling = game.xHeavyDamage;
-    } else {
-      spawnManager.damageScaling = spawnManager.damageScaling + 15;
-    }
-    _log.info('Damage Scaling: ${spawnManager.damageScaling}');
+
+    spawnManager.damageScaling = damageScale + 15;
+    _log.info('Damage Scaling: $damageScale');
   }
 
   void gainedCountUpgrade() {
@@ -117,9 +111,7 @@ class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
   }
 
   void explodeAsteroid(Vector2 position, AsteroidComponent _component) {
-    if (game.isPlaying) {
-      FlameAudio.play('explosion.wav', volume: 0.1);
-    }
+    game.audioComponent.onAsteroidDestoryed();
     final explosionParticle = ParticleSystemComponent(
       position: game.camera.localToGlobal(position),
       anchor: Anchor.center,

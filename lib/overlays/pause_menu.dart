@@ -88,7 +88,7 @@ class _PauseMenuState extends State<PauseMenu> {
                 child: ElevatedButton(
                   onPressed: () {
                     widget.game.overlays.remove('Game Over');
-                    Navigator.of(context).pushNamed('NewGame');
+                    Navigator.of(context).pushReplacementNamed('NewGame');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: whiteTextColor,

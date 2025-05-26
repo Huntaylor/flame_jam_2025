@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/particles.dart' as parts;
-import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_behaviors/flame_behaviors.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/behaviors/satellite_shapes.dart';
@@ -80,9 +79,7 @@ class SatelliteControllerBehavior extends Behavior<SatelliteComponent>
 
   void _explodeSatellite(List<List<Vector2>> polyShapes, Vector2 position,
       SatelliteComponent _component) {
-    if (game.isPlaying) {
-      FlameAudio.play('satellite_explosion.wav', volume: 0.1);
-    }
+    game.audioComponent.onSatelliteDestoryed();
     List<ParticleSystemComponent> particles = [];
     for (var shape in polyShapes) {
       List<Vector2> scaleList = [];

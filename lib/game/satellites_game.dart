@@ -9,6 +9,7 @@ import 'package:flame/events.dart';
 import 'package:flame/parallax.dart';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
+import 'package:flame_jam_2025/game/components/audio_component.dart';
 import 'package:flame_jam_2025/game/components/mouse_render_component.dart';
 import 'package:flame_jam_2025/game/components/satellite_hud_button.dart';
 import 'package:flame_jam_2025/game/components/story_component.dart';
@@ -86,6 +87,7 @@ class SatellitesGame extends Forge2DGame
   late TextComponent immersiveModeComponent;
 
   late StoryComponent storyComponent;
+  late AudioComponent audioComponent;
 
   late SatelliteHudButton inGameMuteButton;
 
@@ -129,8 +131,21 @@ class SatellitesGame extends Forge2DGame
     Vector2(128.0, 58.0),
   ];
 
+  double fixedDeltaTime = 1 / 60;
+  double accumulatedTime = 0;
+
+  @override
+  void updateTree(double dt) {
+    accumulatedTime += dt;
+    while (accumulatedTime >= fixedDeltaTime) {
+      accumulatedTime -= fixedDeltaTime;
+    }
+    super.updateTree(dt);
+  }
+
   @override
   FutureOr<void> onLoad() async {
+    audioComponent = AudioComponent();
     storyComponent = StoryComponent(
       position: Vector2(50, 200),
     );
@@ -154,8 +169,9 @@ class SatellitesGame extends Forge2DGame
       button: TextComponent(
         text: '-Launch satellite-',
         textRenderer: TextPaint(
-            style: SatellitesTextStyle.titleLarge
-                .copyWith(color: Colors.blueGrey)),
+          style:
+              SatellitesTextStyle.titleLarge.copyWith(color: Colors.blueGrey),
+        ),
       ),
       onPressed: () {
         return gameState = GameState.start;
@@ -167,8 +183,10 @@ class SatellitesGame extends Forge2DGame
       button: TextComponent(
         text: '-Mute-',
         textRenderer: TextPaint(
-            style: SatellitesTextStyle.headlineSmall
-                .copyWith(color: Colors.red[400])),
+          style: SatellitesTextStyle.headlineSmall.copyWith(
+            color: Colors.red[400],
+          ),
+        ),
       ),
       onPressed: () {
         isPlaying = !isPlaying;
@@ -180,8 +198,11 @@ class SatellitesGame extends Forge2DGame
     muteTextComponent = TextComponent(
       text: '',
       textRenderer: TextPaint(
-          style: SatellitesTextStyle.headlineSmall
-              .copyWith(fontSize: 18, color: Colors.red[400])),
+        style: SatellitesTextStyle.headlineSmall.copyWith(
+          fontSize: 18,
+          color: Colors.red[400],
+        ),
+      ),
     );
 
     inGameMuteButton = SatelliteHudButton(
@@ -200,6 +221,7 @@ class SatellitesGame extends Forge2DGame
     mouseRenderComponent = MouseRenderComponent();
 
     addAll([
+      audioComponent,
       playButton,
       muteButton,
     ]);
