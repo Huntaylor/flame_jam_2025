@@ -27,6 +27,8 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
 
   final Vector2 newPosition;
 
+  late Vector2 fireVel;
+
   late Timer deathTimer;
 
   // late TextComponent typeNameComponent;
@@ -122,7 +124,7 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
       anchor: Anchor.center,
       particle: parts.ScalingParticle(
         to: 0,
-        lifespan: 1.5,
+        lifespan: 1,
         child: parts.ComponentParticle(
           component: PolygonComponent(particleShape)..setColor(newPaint.color),
         ),
@@ -191,6 +193,9 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
     spriteComponent.position = position;
     if (!isCollected) {
       addParticles(position);
+      if (body.linearVelocity != fireVel) {
+        body.linearVelocity = fireVel;
+      }
     }
 
     if (!game.camera.visibleWorldRect.containsPoint(position) &&
@@ -235,7 +240,7 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
 
     velocityY *= speed / length;
 
-    final fireVel = Vector2(velocityX, velocityY);
+    fireVel = Vector2(velocityX, velocityY);
     body.linearVelocity = fireVel;
 
     return body;

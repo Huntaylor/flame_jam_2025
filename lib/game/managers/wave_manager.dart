@@ -100,7 +100,7 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
 
   int index = 0;
 
-  int waveNumber = 1;
+  int waveNumber = 15;
 
   double stepUpSpeed = 0;
   double stepUpHealth = 1;
@@ -113,8 +113,8 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
 
   @override
   FutureOr<void> onLoad() {
-    upgradeTimer =
-        Timer(20, onTick: () => createUpgrade(), autoStart: true, repeat: true);
+    upgradeTimer = Timer(20,
+        onTick: () => createUpgrade(), autoStart: false, repeat: true);
     waveTimer = Timer(
       5,
       onTick: () => onWaveComplete(),
@@ -185,6 +185,9 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
       waveTimer.update(dt);
     }
     if (game.isGameStarted && game.gameState != GameState.end) {
+      if (!upgradeTimer.isRunning()) {
+        upgradeTimer.start();
+      }
       if (isInProgress) {
         if (game.waveSatellites.length == 1) {
           game.satellitesLeftTextComponent.text =
@@ -193,16 +196,14 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
           game.satellitesLeftTextComponent.text =
               '${game.waveSatellites.length} Satellites left';
         }
-      }
-      // Should be called one time and when all the current wave
-      // satellites are destroyed
-      if (isInProgress &&
-          game.waveSatellites.isEmpty &&
-          !waveTimer.isRunning()) {
-        game.satellitesLeftTextComponent.text = 'Wave Complete!';
-        initialAdded = false;
-        state = WaveState.end;
-        waveTimer.start();
+        // Should be called one time and when all the current wave
+        // satellites are destroyed
+        if (game.waveSatellites.isEmpty && !waveTimer.isRunning()) {
+          game.satellitesLeftTextComponent.text = 'Wave Complete!';
+          initialAdded = false;
+          state = WaveState.end;
+          waveTimer.start();
+        }
       }
     } else {
       game.waveTextComponent.text = '';

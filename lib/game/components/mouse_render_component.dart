@@ -22,38 +22,15 @@ class MouseRenderComponent extends Component
 
   Vector2 previousPosition = Vector2.zero();
 
-  // @override
-  // void renderTree(Canvas canvas) {
-  //   super.renderTree(canvas);
-  //   if (game.gameState != GameState.mainMenu) {
-  //     if (game.asteroids.isNotEmpty &&
-  //         game.lineSegment != null &&
-  //         game.asteroids.any((e) => e.isOrbiting)) {
-  //       final firstAsteroids = game.asteroids.firstWhere((e) => e.isOrbiting);
-
-  //       final position =
-  //           game.camera.localToGlobal(firstAsteroids.body.worldCenter);
-
-  //       final direction = (game.lineSegment! - position).normalized();
-
-  //       final distanceToMouse = position.distanceTo(game.lineSegment!);
-
-  //       final totalLength = distanceToMouse + 50.0;
-  //       final endPoint = position + (direction * totalLength);
-
-  //       _drawDottedLine(canvas, position, endPoint);
-  //     }
-  //   }
-  // }
-
   @override
   void render(Canvas canvas) {
-    // super.render(canvas);
+    super.render(canvas);
 
     if (game.gameState != GameState.mainMenu) {
       if (game.asteroids.isNotEmpty &&
           game.lineSegment != null &&
           game.asteroids.any((e) => e.isOrbiting)) {
+        canvas.save();
         final firstAsteroids = game.asteroids.firstWhere((e) => e.isOrbiting);
 
         final position =
@@ -67,6 +44,7 @@ class MouseRenderComponent extends Component
         final endPoint = position + (direction * totalLength);
 
         _drawDottedLine(canvas, position, endPoint);
+        canvas.restore();
       }
     }
   }

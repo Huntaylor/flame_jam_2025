@@ -37,7 +37,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
     required this.isTooLate,
     required this.originCountry,
     this.countryName,
-  }) /*  : super(paint: Paint()..color = Colors.grey) */ {
+  }) {
     void getSpeed(double difficultySpeed) {
       speedIncrease = speedIncrease + difficultySpeed + (stepUpSpeed ?? 0);
     }
@@ -49,18 +49,26 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
     switch (difficulty) {
       case SatelliteDifficulty.easy:
         getSpeed(1);
+
         getHealth(lightArmor);
+
       case SatelliteDifficulty.fast:
         getSpeed(5);
+
         getHealth(cheapArmor);
+
       case SatelliteDifficulty.medium:
         getSpeed(2);
+
         getHealth(mediumArmor);
+
       case SatelliteDifficulty.hard:
         getSpeed(1.5);
+
         getHealth(heavyArmor);
+
       case SatelliteDifficulty.boss:
-        getSpeed(3);
+        getSpeed(2);
 
         getHealth(bossArmor);
     }
@@ -264,16 +272,26 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
 
   @override
   void update(double dt) {
+    if (!isTooLate) {
+      if (isBoss) {
+        body.setTransform(
+          position,
+          angle + -turningDirection,
+        );
+      }
+      _checkImpulse();
+    }
     if (redirectTimer.isRunning()) {
       redirectTimer.update(dt);
     }
-    if (isBoss && !isTooLate) {
-      body.setTransform(
-        position,
-        angle + -turningDirection,
-      );
-    }
+
     super.update(dt);
+  }
+
+  void _checkImpulse() {
+    if (body.linearVelocity != startingImpulse) {
+      body.linearVelocity = startingImpulse!;
+    }
   }
 
   @override
@@ -326,7 +344,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
         }
 
       case SatelliteDifficulty.fast:
-        for (var shape in smallerSatellite) {
+        for (var shape in fastSatellite) {
           final fixtureDef =
               FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
           _body.createFixture(fixtureDef);
@@ -395,10 +413,8 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
   }
 
   void addBehaviors() {
-    addAll(
-      [
-        SatelliteControllerBehavior(),
-      ],
+    add(
+      SatelliteControllerBehavior(),
     );
   }
 

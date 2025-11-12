@@ -97,7 +97,17 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
         position,
         angle + -turningDirection,
       );
+      if (body.linearVelocity != fireVel) {
+        body.linearVelocity = fireVel;
+      }
     }
+    if (!isFiring && !isOrbiting) {
+      if (body.linearVelocity != impulseDirection &&
+          body.linearVelocity != game.asteroidAngle) {
+        body.linearVelocity = impulseDirection ?? game.asteroidAngle;
+      }
+    }
+
     super.update(dt);
   }
 
@@ -114,7 +124,8 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
     } else if (other is SatelliteComponent && isFiring) {
       if (other.isTooLate) {
         return;
-      } else if (sate != null && other != sate) {
+      }
+      if (sate != null && other != sate) {
         sate = other;
         dealtDamage = true;
         if (other.currentHealth >= currentDamage) {
@@ -124,6 +135,8 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
       } else if (!dealtDamage) {
         sate = other;
         dealtDamage = true;
+        other.controllerBehavior.takeDamage(currentDamage);
+
         if (other.currentHealth >= currentDamage) {
           _log.info('Current Damage: $currentDamage');
 
@@ -131,7 +144,6 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
         } else {
           currentDamage = currentDamage - other.currentHealth;
         }
-        other.controllerBehavior.takeDamage(currentDamage);
       }
     }
     super.beginContact(other, contact);
