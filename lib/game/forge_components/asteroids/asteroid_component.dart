@@ -18,7 +18,6 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks, EntityMixin {
   AsteroidComponent({
     super.priority,
-    // this.currentColor,
     this.newPosition,
     this.impulseDirection,
     required this.startPosition,
@@ -54,7 +53,6 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
   final Vector2? impulseDirection;
   final Vector2? newPosition;
   final Vector2 startPosition;
-  // late Color? currentColor;
 
   late Vector2 fireVel;
 
@@ -72,7 +70,6 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
   bool shouldRepel = false;
 
   late FixtureDef fixtureDefCircle;
-  // late FixtureDef fixtureDefCircle2;
 
   late double turningDirection;
   Random random = Random();
@@ -109,9 +106,7 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
     if (other is EarthGravityComponent) {
       _log.info('Game manager state: $currentDamage & ${other.damageMinimum}');
       _log.info(other.damageMinimum > currentDamage);
-      if (game.waveManager.hasEnded) {
-        controllerBehavior.explodeAsteroid(position, this);
-      } else if (other.damageMinimum > currentDamage) {
+      if (game.waveManager.hasEnded || other.damageMinimum > currentDamage) {
         controllerBehavior.explodeAsteroid(position, this);
       }
     } else if (other is EarthComponent) {
@@ -123,23 +118,20 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
         sate = other;
         dealtDamage = true;
         if (other.currentHealth >= currentDamage) {
-          // _log.info('Current Damage: $currentDamage');
-          other.controllerBehavior.takeDamage(currentDamage);
           controllerBehavior.explodeAsteroid(position, this);
-        } else {
-          other.controllerBehavior.takeDamage(currentDamage);
         }
+        other.controllerBehavior.takeDamage(currentDamage);
       } else if (!dealtDamage) {
         sate = other;
         dealtDamage = true;
         if (other.currentHealth >= currentDamage) {
           _log.info('Current Damage: $currentDamage');
-          other.controllerBehavior.takeDamage(currentDamage);
+
           controllerBehavior.explodeAsteroid(position, this);
         } else {
-          other.controllerBehavior.takeDamage(currentDamage);
           currentDamage = currentDamage - other.currentHealth;
         }
+        other.controllerBehavior.takeDamage(currentDamage);
       }
     }
     super.beginContact(other, contact);
@@ -149,9 +141,8 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
   Body createBody() {
     final _currentPosition = isFiring ? newPosition : startPosition;
     final def = BodyDef(
+      bullet: true,
       userData: this,
-      // bullet: true,
-      isAwake: true,
       type: BodyType.dynamic,
       position: _currentPosition,
     );
@@ -159,19 +150,10 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
     final body = world.createBody(def)..userData = this;
     final circle =
         CircleShape(radius: .5 + (sizeScaling ?? 0), position: Vector2.zero());
-    // final circle2 = CircleShape(
-    //   radius: .5 /* + (sizeScaling ?? 0) */,
-    //   position: Vector2(
-    //     .2,
-    //     0,
-    //   ),
-    // );
 
     fixtureDefCircle = FixtureDef(circle, isSensor: true);
-    // fixtureDefCircle2 = FixtureDef(circle2, isSensor: true);
 
     body.createFixture(fixtureDefCircle);
-    // body.createFixture(fixtureDefCircle2);
     body.synchronizeFixtures();
     body.setMassData(MassData()..mass = 1.2);
 
@@ -189,9 +171,9 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
 
       fireVel = Vector2(velocityX, velocityY);
 
-      body.applyLinearImpulse(fireVel);
+      body.linearVelocity = fireVel;
     } else {
-      body.applyLinearImpulse(impulseDirection ?? game.asteroidAngle);
+      body.linearVelocity = impulseDirection ?? game.asteroidAngle;
     }
 
     return body;
@@ -200,20 +182,17 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
   void addSprite() async {
     final diameter = (.5 + (sizeScaling ?? 0)) * 2;
 
-    final spriteComponent =
-        SpriteComponent.fromImage(spriteImage ?? game.spriteImage!,
-            // srcSize: ,
-            size: Vector2.all(3 * diameter),
-            anchor: Anchor.center);
+    final spriteComponent = SpriteComponent.fromImage(
+        spriteImage ?? game.spriteImage!,
+        size: Vector2.all(3 * diameter),
+        anchor: Anchor.center);
 
     add(spriteComponent);
   }
 
   void addBehaviors() {
-    addAll(
-      [
-        AsteroidControllerBehavior(),
-      ],
+    add(
+      AsteroidControllerBehavior(),
     );
   }
 }

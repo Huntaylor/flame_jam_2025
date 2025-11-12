@@ -146,7 +146,7 @@ class SatellitesTheme {
   }
 
   static AppBarTheme get _appBarTheme {
-    return const AppBarTheme(color: SatellitesColors.primary);
+    return const AppBarTheme(backgroundColor: SatellitesColors.primary);
   }
 
   static ElevatedButtonThemeData get _elevatedButtonTheme {

@@ -111,10 +111,6 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
 
     game.world.add(spriteComponent);
 
-    // typeNameComponent = TextComponent(
-    //     text: text, anchor: Anchor.center, scale: Vector2.all(.05));
-    // game.world.add(typeNameComponent);
-
     newPaint.color = paint.color;
 
     return super.onLoad();
@@ -126,7 +122,7 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
       anchor: Anchor.center,
       particle: parts.ScalingParticle(
         to: 0,
-        lifespan: 3,
+        lifespan: 1.5,
         child: parts.ComponentParticle(
           component: PolygonComponent(particleShape)..setColor(newPaint.color),
         ),
@@ -240,8 +236,7 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
     velocityY *= speed / length;
 
     final fireVel = Vector2(velocityX, velocityY);
-
-    body.applyLinearImpulse(fireVel);
+    body.linearVelocity = fireVel;
 
     return body;
   }

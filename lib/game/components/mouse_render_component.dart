@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'dart:math' as math;
 
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
@@ -7,84 +7,133 @@ import 'package:flutter/material.dart';
 
 class MouseRenderComponent extends Component
     with HasGameReference<SatellitesGame>, TapCallbacks {
-  MouseRenderComponent();
+  MouseRenderComponent({super.priority});
 
   final newPaint = Paint();
-  double timeElapsed = 0;
-  static const timePerFrame = 1 / 20;
 
-  double first = 20;
-  double second = 30;
-  double firstInitial = 20;
-  double secondInitial = 30;
+  final rayLength = 1500.0;
+
+  double animationOffset = 0.0;
+  final double dashLength = 15.0;
+  final double gapLength = 30;
+  final double animationSpeed = 100.0;
+
+  final double fadeDistance = 80.0;
+
+  Vector2 previousPosition = Vector2.zero();
 
   // @override
-  // void update(double dt) {
-  //   timeElapsed += dt;
+  // void renderTree(Canvas canvas) {
+  //   super.renderTree(canvas);
+  //   if (game.gameState != GameState.mainMenu) {
+  //     if (game.asteroids.isNotEmpty &&
+  //         game.lineSegment != null &&
+  //         game.asteroids.any((e) => e.isOrbiting)) {
+  //       final firstAsteroids = game.asteroids.firstWhere((e) => e.isOrbiting);
 
-  //   if (timeElapsed > timePerFrame) {
-  //     timeElapsed -= timePerFrame;
-  //     first = first + 10;
-  //     second = second + 30;
+  //       final position =
+  //           game.camera.localToGlobal(firstAsteroids.body.worldCenter);
 
-  //     // if (first > firstInitial) {
-  //     //   first = 20;
-  //     // }
-  //     // if (second > secondInitial) {
-  //     //   second = 30;
-  //     // }
-  //     super.update(timePerFrame);
+  //       final direction = (game.lineSegment! - position).normalized();
+
+  //       final distanceToMouse = position.distanceTo(game.lineSegment!);
+
+  //       final totalLength = distanceToMouse + 50.0;
+  //       final endPoint = position + (direction * totalLength);
+
+  //       _drawDottedLine(canvas, position, endPoint);
+  //     }
   //   }
   // }
 
   @override
   void render(Canvas canvas) {
+    // super.render(canvas);
+
     if (game.gameState != GameState.mainMenu) {
-      canvas.save();
       if (game.asteroids.isNotEmpty &&
           game.lineSegment != null &&
           game.asteroids.any((e) => e.isOrbiting)) {
         final firstAsteroids = game.asteroids.firstWhere((e) => e.isOrbiting);
 
-        drawDashedLine(
-          canvas: canvas,
-          p1: game.camera
-              .localToGlobal(firstAsteroids.body.worldCenter)
-              .toOffset(),
-          p2: game.lineSegment!.toOffset(),
-          paint: newPaint..color = Colors.amber,
-          pattern: [first, second],
-        );
-      }
-      canvas.restore();
+        final position =
+            game.camera.localToGlobal(firstAsteroids.body.worldCenter);
 
-      super.render(canvas);
+        final direction = (game.lineSegment! - position).normalized();
+
+        final distanceToMouse = position.distanceTo(game.lineSegment!);
+
+        final totalLength = distanceToMouse + 50.0;
+        final endPoint = position + (direction * totalLength);
+
+        _drawDottedLine(canvas, position, endPoint);
+      }
     }
   }
 
-  Canvas drawDashedLine({
-    required Canvas canvas,
-    required Offset p1,
-    required Offset p2,
-    required Iterable<double> pattern,
-    required Paint paint,
-  }) {
-    assert(pattern.length.isEven);
-    final distance = (p2 - p1).distance;
-    final normalizedPattern = pattern.map((width) => width / distance).toList();
-    final points = <Offset>[];
-    double t = 0;
-    int i = 0;
+  void _drawDottedLine(Canvas canvas, Vector2 start, Vector2 end) {
+    final totalDistance = start.distanceTo(end);
+    final direction = (end - start).normalized();
+    final patternLength = dashLength + gapLength;
+    final fadeStartDistance = totalDistance - fadeDistance;
+    double currentDistance = animationOffset % patternLength;
 
-    while (t < 1) {
-      points.add(Offset.lerp(p1, p2, t)!);
-      t += normalizedPattern[i++]; // dashWidth
-      points.add(Offset.lerp(p1, p2, t.clamp(0, 1))!);
-      t += normalizedPattern[i++]; // dashSpace
-      i %= normalizedPattern.length;
+    while (currentDistance < totalDistance) {
+      final dashStart = start + (direction * currentDistance);
+      final dashEndDistance =
+          math.min(currentDistance + dashLength, totalDistance);
+      final dashEnd = start + (direction * dashEndDistance);
+
+      // Calculate opacity based on distance
+      double opacity = 1.0;
+      if (currentDistance > fadeStartDistance) {
+        // Fade out over the fadeDistance
+        final fadeProgress =
+            (currentDistance - fadeStartDistance) / fadeDistance;
+        opacity = 1.0 - fadeProgress.clamp(0.0, 1.0);
+      }
+
+      if (currentDistance >= 0) {
+        canvas.drawLine(
+          dashStart.toOffset(),
+          dashEnd.toOffset(),
+          newPaint..color = Colors.amber.withAlpha((opacity * 255).toInt()),
+        );
+      } else if (dashEndDistance > 0) {
+        final partialDashStart = start;
+        final partialDashEnd = start + (direction * dashEndDistance);
+        canvas.drawLine(
+          partialDashStart.toOffset(),
+          partialDashEnd.toOffset(),
+          newPaint..color = Colors.amber.withAlpha((opacity * 255).toInt()),
+        );
+      }
+
+      currentDistance += patternLength;
     }
+  }
 
-    canvas.drawPoints(PointMode.lines, points, paint);
-    return canvas;
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (game.asteroids.isNotEmpty &&
+        game.lineSegment != null &&
+        game.asteroids.any((e) => e.isOrbiting)) {
+      final firstAsteroids = game.asteroids.firstWhere((e) => e.isOrbiting);
+
+      final position =
+          game.camera.localToGlobal(firstAsteroids.body.worldCenter);
+      final positionDelta = position - previousPosition;
+
+      if (game.lineSegment! != Vector2.zero()) {
+        final rayDirection = (game.lineSegment! - position).normalized();
+        final movementAlongRay = positionDelta.dot(rayDirection);
+        animationOffset -= movementAlongRay;
+      }
+
+      animationOffset += animationSpeed * dt;
+
+      previousPosition = position.clone();
+    }
   }
 }

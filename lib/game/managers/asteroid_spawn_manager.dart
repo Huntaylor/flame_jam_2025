@@ -161,7 +161,6 @@ class AsteroidSpawnManager extends Component
       }
 
       final missingAsteroids = currentMax - currentAsteroids;
-
       newAsteroids = List<AsteroidComponent>.generate(
         missingAsteroids,
         (index) {
@@ -170,6 +169,7 @@ class AsteroidSpawnManager extends Component
               : topTargetLocations;
 
           return AsteroidComponent(
+            priority: 3,
             spriteImage: game.spriteImage,
             impulseDirection: impulseDirection(
               orbitTargetLocation: targetList[rnd.nextInt(9)],

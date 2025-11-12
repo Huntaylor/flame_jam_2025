@@ -97,7 +97,9 @@ class EarthComponent extends BodyComponent<SatellitesGame>
 
   @override
   void beginContact(Object other, Contact contact) {
-    if (other is AsteroidComponent && other.isFiring) {
+    if (other is AsteroidComponent &&
+        other.isFiring &&
+        other.currentDamage > 250) {
       state = EarthState.war;
       if (!damageDealtByList.contains(other)) {
         currentHealth = currentHealth - other.currentDamage;

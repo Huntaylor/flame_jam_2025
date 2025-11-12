@@ -131,12 +131,6 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
   int jupiterGravityLeftX = 110;
   int jupiterGravityTopY = 35;
 
-  // final double cheapArmor = 25;
-  // final double lightArmor = 50;
-  // final double mediumArmor = 75;
-  // final double heavyArmor = 100;
-  // final double bossArmor = 300;
-
   final double cheapArmor = 75;
 
   final double lightArmor = 150;
@@ -214,15 +208,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
   @override
   void beginContact(Object other, Contact contact) {
     if (other is JupiterGravityComponent && !launchOrbit) {
-      if (isBelow) {
-        body.applyLinearImpulse(
-          Vector2(6, 4) * body.mass,
-        );
-      } else {
-        body.applyLinearImpulse(
-          Vector2(6, -4) * body.mass,
-        );
-      }
+      isBelowFunc(body);
       state = SatelliteState.orbiting;
       launchOrbit = true;
       if (game.waveSatellites.contains(this)) {
@@ -304,52 +290,50 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
       fixedRotation: true,
       angle: -45,
       userData: this,
-      isAwake: true,
       type: BodyType.dynamic,
       position: newPosition,
     );
 
-    final body = world.createBody(def)..userData = this;
+    final _body = world.createBody(def)..userData = this;
 
-    if (isEasy) {
-      for (var shape in smallerSatellite) {
-        final fixtureDef =
-            FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
-        body.createFixture(fixtureDef);
-      }
-    } else if (isMedium) {
-      for (var shape in mediumSatellite) {
-        final fixtureDef =
-            FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
-        body.createFixture(fixtureDef);
-      }
-    } else if (isHard) {
-      for (var shape in hardSatellite) {
-        final fixtureDef =
-            FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
-        body.createFixture(fixtureDef);
-      }
-    } else if (isFast) {
-      for (var shape in fastSatellite) {
-        final fixtureDef =
-            FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
-        body.createFixture(fixtureDef);
-      }
-    } else if (isBoss) {
-      for (var shape in bossSatellite) {
-        final fixtureDef =
-            FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
-        body.createFixture(fixtureDef);
-      }
-    } else {
-      for (var shape in smallerSatellite) {
-        final fixtureDef =
-            FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
-        body.createFixture(fixtureDef);
-      }
+    switch (difficulty) {
+      case SatelliteDifficulty.easy:
+        for (var shape in smallerSatellite) {
+          final fixtureDef =
+              FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
+          _body.createFixture(fixtureDef);
+        }
+
+      case SatelliteDifficulty.medium:
+        for (var shape in mediumSatellite) {
+          final fixtureDef =
+              FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
+          _body.createFixture(fixtureDef);
+        }
+
+      case SatelliteDifficulty.hard:
+        for (var shape in hardSatellite) {
+          final fixtureDef =
+              FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
+          _body.createFixture(fixtureDef);
+        }
+
+      case SatelliteDifficulty.boss:
+        for (var shape in bossSatellite) {
+          final fixtureDef =
+              FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
+          _body.createFixture(fixtureDef);
+        }
+
+      case SatelliteDifficulty.fast:
+        for (var shape in smallerSatellite) {
+          final fixtureDef =
+              FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
+          _body.createFixture(fixtureDef);
+        }
     }
 
-    body.synchronizeFixtures();
+    _body.synchronizeFixtures();
     if (!isTooLate) {
       if (past10) {
         final isEvasive = rnd.nextBool();
@@ -372,36 +356,28 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
             targetVec = Vector2(bottomX.toDouble(), bottomY.toDouble());
           }
         }
-        applyImpulse(targetVec, body);
+        applyImpulse(targetVec, _body);
       } else {
-        applyImpulse(_impulseTarget!, body);
+        applyImpulse(_impulseTarget!, _body);
       }
     } else {
-      if (isBelow) {
-        body.applyLinearImpulse(
-          Vector2(6, 4) * body.mass,
-        );
-      } else {
-        body.applyLinearImpulse(
-          Vector2(6, -4) * body.mass,
-        );
-      }
+      isBelowFunc(_body);
       state = SatelliteState.orbiting;
       launchOrbit = true;
       if (game.waveSatellites.contains(this)) {
         game.waveSatellites.remove(this);
       }
-      body.setFixedRotation(false);
+      _body.setFixedRotation(false);
     }
 
-    return body;
+    return _body;
   }
 
   void applyImpulse(Vector2 targetVec, Body _body) {
     double speed;
     if (isOutOfOrbit) {
-      _body.applyLinearImpulse(startingImpulse!.inverted());
-      body.clearForces();
+      _body.linearVelocity = startingImpulse!.inverted();
+      _body.clearForces();
     }
     speed = 1 + speedIncrease;
 
@@ -415,7 +391,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
     velocityY *= speed / length;
 
     startingImpulse = Vector2(velocityX, velocityY);
-    _body.applyLinearImpulse(startingImpulse!);
+    _body.linearVelocity = startingImpulse!;
   }
 
   void addBehaviors() {
@@ -424,5 +400,13 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
         SatelliteControllerBehavior(),
       ],
     );
+  }
+
+  void isBelowFunc(Body _body) {
+    if (isBelow) {
+      _body.linearVelocity = Vector2(6, 4) * _body.mass;
+    } else {
+      _body.linearVelocity = Vector2(6, -4) * _body.mass;
+    }
   }
 }

@@ -98,7 +98,7 @@ class SatellitesGame extends Forge2DGame
 
   bool isGameStarted = false;
   bool hidHud = false;
-  bool isPlaying = true;
+  bool isPlaying;
 
   String waveText = '';
   String satellitesLeftText = '';
@@ -388,11 +388,12 @@ class SatellitesGame extends Forge2DGame
 
   void spawnAsteroids() {
     for (var vec in startingPoints) {
+      final isBehindJupiter = rnd.nextBool();
       final asteroid = AsteroidComponent(
         spriteImage: spriteImage,
         startPosition: vec,
         startingDamage: smallDamage,
-        priority: 3,
+        priority: isBehindJupiter ? 0 : 3,
       );
       asteroids.add(asteroid);
       world.add(asteroid);
@@ -420,8 +421,8 @@ class SatellitesGame extends Forge2DGame
             startPosition: Vector2.zero(),
             startingDamage: asteroid.startingDamage,
             newPosition: asteroid.position,
-            // currentColor: asteroid.currentColor,
             sizeScaling: asteroid.sizeScaling,
+            priority: 3,
           );
           newAsteroid.state = AsteroidState.firing;
           asteroids.removeWhere((e) => e == asteroid);

@@ -41,21 +41,4 @@ class JupiterComponent extends BodyComponent<SatellitesGame>
 
     return body;
   }
-
-  // @override
-  // void update(double dt) {
-  //   if (body.position != Vector2.zero()) {
-  //     body.position == Vector2.zero();
-  //   }
-  //   super.update(dt);
-  // }
-
-  // @override
-  // void beginContact(Object other, Contact contact) {
-  //   if (other is! JupiterComponent) {
-  //     final newBody = contact.getOtherBody(body);
-  //     newBody.applyLinearImpulse(Vector2.all(-10));
-  //   }
-  //   super.beginContact(other, contact);
-  // }
 }

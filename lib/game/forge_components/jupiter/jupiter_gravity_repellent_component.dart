@@ -18,8 +18,8 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatellitesGame>
             ..style = PaintingStyle.stroke,
         );
 
-  List<AsteroidComponent> asteroids = [];
-  List<SatelliteComponent> satellites = [];
+  List<AsteroidComponent> orbitingAsteroids = [];
+  List<SatelliteComponent> orbitingSatellites = [];
 
   final double jupiterGravity = 24.79;
   final double jupiterMass = 254.0;
@@ -27,11 +27,11 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatellitesGame>
   @override
   void beginContact(Object other, Contact contact) {
     if (other is AsteroidComponent) {
-      asteroids.add(other);
+      orbitingAsteroids.add(other);
       other.shouldRepel = true;
     } else if (other is SatelliteComponent) {
       other.state = SatelliteState.repelling;
-      satellites.add(other);
+      orbitingSatellites.add(other);
     }
     super.beginContact(other, contact);
   }
@@ -39,17 +39,17 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatellitesGame>
   @override
   void endContact(Object other, Contact contact) {
     if (other is AsteroidComponent) {
-      if (asteroids.isNotEmpty) {
+      if (orbitingAsteroids.isNotEmpty) {
         other.shouldRepel = false;
-        final asteroidBody = asteroids.firstWhere(
+        final asteroidBody = orbitingAsteroids.firstWhere(
           (i) => i.body == contact.getOtherBody(body),
         );
 
-        asteroids.remove(asteroidBody);
+        orbitingAsteroids.remove(asteroidBody);
       }
     } else if (other is SatelliteComponent) {
       other.state = SatelliteState.orbiting;
-      satellites.remove(other);
+      orbitingSatellites.remove(other);
     }
     super.endContact(other, contact);
   }
@@ -57,54 +57,17 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatellitesGame>
   @override
   void update(double dt) {
     // ASTEROIDS
-    if (asteroids.isNotEmpty) {
-      for (var asteroid in asteroids) {
+    if (orbitingAsteroids.isNotEmpty) {
+      for (var asteroid in orbitingAsteroids) {
         if (asteroid.isOrbiting && asteroid.shouldRepel) {
-          final jupiterPosition = game.jupiterPosition.clone();
-
-          Vector2 gravityDirection = jupiterPosition
-            ..sub(asteroid.body.worldCenter);
-
-          final distance = asteroid.body.worldCenter.distanceTo(
-            jupiterPosition,
-          );
-
-          final gravity = (jupiterGravity *
-              (asteroid.body.getMassData().mass *
-                  jupiterMass %
-                  pow(distance, 2)));
-
-          gravityDirection.scaleTo(gravity * dt);
-
-          asteroid.body.applyForce(
-            (gravityDirection / 7).inverted(),
-            point: asteroid.body.worldCenter,
-          );
+          applyRepellent(asteroid.body, dt);
         }
       }
     }
     // SATELLITES
-    if (satellites.isNotEmpty) {
-      for (var satellite in satellites) {
-        final jupiterPosition = game.jupiterPosition.clone();
-
-        Vector2 gravityDirection = jupiterPosition
-          ..sub(satellite.body.worldCenter);
-
-        final distance = satellite.body.worldCenter.distanceTo(
-          jupiterPosition,
-        );
-
-        final gravity = (jupiterGravity *
-            (satellite.body.getMassData().mass *
-                jupiterMass %
-                pow(distance, 2)));
-        gravityDirection.scaleTo(gravity * dt);
-        //need to add in a normalizer
-        satellite.body.applyForce(
-          (gravityDirection / 6).inverted(),
-          point: satellite.body.worldCenter,
-        );
+    if (orbitingSatellites.isNotEmpty) {
+      for (var satellite in orbitingSatellites) {
+        applyRepellent(satellite.body, dt);
       }
     }
     super.update(dt);
@@ -124,5 +87,25 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatellitesGame>
     body.synchronizeFixtures();
 
     return body;
+  }
+
+  void applyRepellent(Body objectBody, double dt) {
+    final jupiterPosition = game.jupiterPosition.clone();
+
+    Vector2 gravityDirection = jupiterPosition..sub(objectBody.worldCenter);
+
+    final distance = objectBody.worldCenter.distanceTo(
+      jupiterPosition,
+    );
+
+    final gravity = (jupiterGravity *
+        (objectBody.getMassData().mass * jupiterMass % pow(distance, 2)));
+
+    gravityDirection.scaleTo(gravity * dt);
+
+    objectBody.applyForce(
+      (gravityDirection / 6).inverted(),
+      point: objectBody.worldCenter,
+    );
   }
 }

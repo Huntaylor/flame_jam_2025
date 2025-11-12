@@ -6,11 +6,9 @@ import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_componen
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
-import 'package:logging/logging.dart';
 
 class JupiterGravityComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks {
-  static final Logger _log = Logger('Jupiter Gravity Component');
   JupiterGravityComponent({super.priority})
       : super(
           paint: Paint()
@@ -49,13 +47,15 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
       } else {
         other.controllerBehavior.destroySatellite(true);
       }
-    } else if (other is AsteroidComponent && !other.isFiring) {
-      other.state = AsteroidState.orbitingJupiter;
-      if (!game.asteroids.contains(other)) {
-        game.asteroids.add(other);
+    } else if (other is AsteroidComponent) {
+      if (!other.isFiring) {
+        other.state = AsteroidState.orbitingJupiter;
+        if (!game.asteroids.contains(other)) {
+          game.asteroids.add(other);
+        }
+      } else {
+        other.isWithinOrbit = true;
       }
-    } else if (other is AsteroidComponent && other.isFiring) {
-      other.isWithinOrbit = true;
     }
     super.beginContact(other, contact);
   }
@@ -74,35 +74,7 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
     if (game.orbitingSatellites.isNotEmpty) {
       for (var satellite in game.orbitingSatellites) {
         if (satellite.isTooLate && satellite.isOrbiting) {
-          final jupiterPosition = game.jupiterPosition.clone();
-          Vector2 gravityDirection = jupiterPosition
-            ..sub(satellite.body.worldCenter);
-
-          final distance = satellite.body.worldCenter.distanceTo(
-            jupiterPosition,
-          );
-
-          final gravity = (jupiterGravity *
-              (satellite.body.getMassData().mass *
-                  jupiterMass %
-                  pow(distance, 2)));
-
-          gravityDirection.scaleTo(gravity * dt);
-
-          final normalizedData =
-              satellite.body.linearVelocity.clone().normalize();
-
-          if (limiter < normalizedData) {
-            //Max 50, starts to get too fast after that
-            satellite.body.applyForce(
-              satellite.body.linearVelocity.inverted(),
-            );
-          } else {
-            satellite.body.applyForce(
-              gravityDirection / 2,
-              point: satellite.body.worldCenter,
-            );
-          }
+          applyGravity(satellite.body, dt);
         }
       }
     }
@@ -110,36 +82,7 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
     if (game.asteroids.isNotEmpty) {
       for (var asteroid in game.asteroids) {
         if (asteroid.isOrbiting && !asteroid.shouldRepel) {
-          // Trying to set this in the onLoad will break the gravity? Doesn't go the same way?
-          // Looks like it is staying like this
-          final jupiterPosition = game.jupiterPosition.clone();
-
-          Vector2 gravityDirection = jupiterPosition
-            ..sub(asteroid.body.worldCenter);
-
-          final distance = asteroid.body.worldCenter.distanceTo(
-            jupiterPosition,
-          );
-
-          final gravity = (jupiterGravity *
-              (asteroid.body.getMassData().mass *
-                  jupiterMass %
-                  pow(distance, 2)));
-          gravityDirection.scaleTo(gravity * dt);
-          final normalizedData =
-              asteroid.body.linearVelocity.clone().normalize();
-          if (limiter < normalizedData) {
-            //Max 50, starts to get too fast after that
-            // largestNumber = normalizedData;
-            asteroid.body.applyForce(
-              asteroid.body.linearVelocity.inverted(),
-            );
-          } else {
-            asteroid.body.applyForce(
-              gravityDirection,
-              point: asteroid.body.worldCenter,
-            );
-          }
+          applyGravity(asteroid.body, dt);
         }
       }
     }
@@ -161,5 +104,34 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
     body.synchronizeFixtures();
 
     return body;
+  }
+
+  void applyGravity(Body objectBody, double dt) {
+    final jupiterPosition = game.jupiterPosition.clone();
+
+    Vector2 gravityDirection = jupiterPosition..sub(objectBody.worldCenter);
+
+    final distance = objectBody.worldCenter.distanceTo(
+      jupiterPosition,
+    );
+
+    final gravity = (jupiterGravity *
+        (objectBody.getMassData().mass * jupiterMass % pow(distance, 2)));
+
+    gravityDirection.scaleTo(gravity * dt);
+
+    final normalizedData = objectBody.linearVelocity.clone().normalize();
+
+    if (limiter < normalizedData) {
+      //Max 50, starts to get too fast after that
+      objectBody.applyForce(
+        objectBody.linearVelocity.inverted(),
+      );
+    } else {
+      objectBody.applyForce(
+        gravityDirection,
+        point: objectBody.worldCenter,
+      );
+    }
   }
 }
