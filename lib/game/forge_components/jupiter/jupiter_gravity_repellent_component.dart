@@ -29,10 +29,10 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatellitesGame>
     if (other is AsteroidComponent) {
       orbitingAsteroids.add(other);
       other.shouldRepel = true;
-    } else if (other is SatelliteComponent) {
+    } /* else if (other is SatelliteComponent) {
       other.state = SatelliteState.repelling;
       orbitingSatellites.add(other);
-    }
+    } */
     super.beginContact(other, contact);
   }
 
@@ -47,10 +47,10 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatellitesGame>
 
         orbitingAsteroids.remove(asteroidBody);
       }
-    } else if (other is SatelliteComponent) {
+    } /*  else if (other is SatelliteComponent) {
       other.state = SatelliteState.orbiting;
       orbitingSatellites.remove(other);
-    }
+    } */
     super.endContact(other, contact);
   }
 
@@ -65,11 +65,11 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatellitesGame>
       }
     }
     // SATELLITES
-    if (orbitingSatellites.isNotEmpty) {
-      for (var satellite in orbitingSatellites) {
-        applyRepellent(satellite.body, dt);
-      }
-    }
+    // if (orbitingSatellites.isNotEmpty) {
+    //   for (var satellite in orbitingSatellites) {
+    //     applyRepellent(satellite.body, dt);
+    //   }
+    // }
     super.update(dt);
   }
 

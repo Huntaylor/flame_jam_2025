@@ -23,7 +23,7 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
   final double limiter = 40;
 
   @override
-  void beginContact(Object other, Contact contact) {
+  void beginContact(Object other, Contact contact) async {
     if (other is SatelliteComponent && !other.isTooLate) {
       game.audioComponent.onEnterOrbit();
       if (other.currentHealth > 0) {
@@ -37,8 +37,11 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
         other.state = SatelliteState.orbiting;
 
         game.world.remove(other);
+        //This is creating two on a rare edgecase? I've noticed it with the fastest ones
         if (!game.world.children.contains(newSatellite)) {
           game.world.add(newSatellite);
+          await Future.wait([newSatellite.loaded]);
+          createGravityJoint(newSatellite.body);
         }
 
         if (!game.orbitingSatellites.contains(newSatellite)) {
@@ -71,13 +74,13 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
   @override
   void update(double dt) {
     // SATELLITES
-    if (game.orbitingSatellites.isNotEmpty) {
-      for (var satellite in game.orbitingSatellites) {
-        if (satellite.isTooLate && satellite.isOrbiting) {
-          applyGravity(satellite.body, dt);
-        }
-      }
-    }
+    // if (game.orbitingSatellites.isNotEmpty) {
+    //   for (var satellite in game.orbitingSatellites) {
+    //     if (satellite.isTooLate && satellite.isOrbiting) {
+    //       applyGravity(satellite.body, dt);
+    //     }
+    //   }
+    // }
     // ASTEROIDS
     if (game.asteroids.isNotEmpty) {
       for (var asteroid in game.asteroids) {
@@ -88,6 +91,21 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
     }
 
     super.update(dt);
+  }
+
+  void createGravityJoint(Body satelliteBody) {
+    final distanceJointDef = DistanceJointDef()
+      ..initialize(
+        satelliteBody,
+        body,
+        satelliteBody.worldCenter,
+        game.jupiterPosition,
+      )
+      ..length = 25
+      ..frequencyHz = 0.5
+      ..dampingRatio = 0.9;
+
+    game.world.createJoint(DistanceJoint(distanceJointDef));
   }
 
   @override
@@ -130,6 +148,34 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
     } else {
       objectBody.applyForce(
         gravityDirection,
+        point: objectBody.worldCenter,
+      );
+    }
+  }
+
+  void applySatelliteGravity(Body objectBody, double dt) {
+    final jupiterPosition = game.jupiterPosition.clone();
+    Vector2 gravityDirection = jupiterPosition..sub(objectBody.worldCenter);
+
+    final distance = objectBody.worldCenter.distanceTo(
+      jupiterPosition,
+    );
+
+    final gravity = (jupiterGravity *
+        (objectBody.getMassData().mass * jupiterMass % pow(distance, 2)));
+
+    gravityDirection.scaleTo(gravity * dt);
+
+    final normalizedData = objectBody.linearVelocity.clone().normalize();
+
+    if (limiter < normalizedData) {
+      //Max 50, starts to get too fast after that
+      objectBody.applyForce(
+        objectBody.linearVelocity.inverted(),
+      );
+    } else {
+      objectBody.applyForce(
+        gravityDirection / 2,
         point: objectBody.worldCenter,
       );
     }
