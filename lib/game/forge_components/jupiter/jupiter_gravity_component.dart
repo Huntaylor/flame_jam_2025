@@ -49,7 +49,6 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
             difficulty: other.difficulty,
           ),
         );
-        print(check.key);
         if (check.key == null) {
           game.orbitingSatellites.add(newSatellite);
           game.world.add(newSatellite);
