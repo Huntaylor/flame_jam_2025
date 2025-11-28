@@ -100,7 +100,7 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
 
   int index = 0;
 
-  int waveNumber = 15;
+  int waveNumber = 1;
 
   double stepUpSpeed = 0;
   double stepUpHealth = 1;
@@ -355,6 +355,7 @@ class WaveManager extends Component with HasGameReference<SatellitesGame> {
     );
 
     return SatelliteComponent(
+      key: ComponentKey.unique(),
       originCountry: (waveNumber == 1) ? SatelliteCountry.green : getOrigin(),
       newPosition: game.earthPosition,
       isTooLate: false,

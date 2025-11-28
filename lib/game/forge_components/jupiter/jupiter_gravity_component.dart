@@ -28,24 +28,33 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
       game.audioComponent.onEnterOrbit();
       if (other.currentHealth > 0) {
         final newSatellite = SatelliteComponent(
+          key: other.key,
           originCountry: other.originCountry,
           newPosition: other.position,
           isTooLate: true,
           isBelow: other.isBelow,
           difficulty: other.difficulty,
         );
-        other.state = SatelliteState.orbiting;
 
         game.world.remove(other);
+
         //This is creating two on a rare edgecase? I've noticed it with the fastest ones
-        if (!game.world.children.contains(newSatellite)) {
+        final check = game.orbitingSatellites.firstWhere(
+          (component) => component.key == newSatellite.key,
+          orElse: () => SatelliteComponent(
+            originCountry: other.originCountry,
+            newPosition: other.position,
+            isTooLate: true,
+            isBelow: other.isBelow,
+            difficulty: other.difficulty,
+          ),
+        );
+        print(check.key);
+        if (check.key == null) {
+          game.orbitingSatellites.add(newSatellite);
           game.world.add(newSatellite);
           await Future.wait([newSatellite.loaded]);
           createGravityJoint(newSatellite.body);
-        }
-
-        if (!game.orbitingSatellites.contains(newSatellite)) {
-          game.orbitingSatellites.add(newSatellite);
         }
       } else {
         other.controllerBehavior.destroySatellite(true);
@@ -73,14 +82,6 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
 
   @override
   void update(double dt) {
-    // SATELLITES
-    // if (game.orbitingSatellites.isNotEmpty) {
-    //   for (var satellite in game.orbitingSatellites) {
-    //     if (satellite.isTooLate && satellite.isOrbiting) {
-    //       applyGravity(satellite.body, dt);
-    //     }
-    //   }
-    // }
     // ASTEROIDS
     if (game.asteroids.isNotEmpty) {
       for (var asteroid in game.asteroids) {
@@ -148,34 +149,6 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
     } else {
       objectBody.applyForce(
         gravityDirection,
-        point: objectBody.worldCenter,
-      );
-    }
-  }
-
-  void applySatelliteGravity(Body objectBody, double dt) {
-    final jupiterPosition = game.jupiterPosition.clone();
-    Vector2 gravityDirection = jupiterPosition..sub(objectBody.worldCenter);
-
-    final distance = objectBody.worldCenter.distanceTo(
-      jupiterPosition,
-    );
-
-    final gravity = (jupiterGravity *
-        (objectBody.getMassData().mass * jupiterMass % pow(distance, 2)));
-
-    gravityDirection.scaleTo(gravity * dt);
-
-    final normalizedData = objectBody.linearVelocity.clone().normalize();
-
-    if (limiter < normalizedData) {
-      //Max 50, starts to get too fast after that
-      objectBody.applyForce(
-        objectBody.linearVelocity.inverted(),
-      );
-    } else {
-      objectBody.applyForce(
-        gravityDirection / 2,
         point: objectBody.worldCenter,
       );
     }

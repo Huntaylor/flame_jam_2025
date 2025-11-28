@@ -12,7 +12,11 @@ import 'package:flame_jam_2025/game/forge_components/satellite/behaviors/satelli
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 
-enum SatelliteState { destroyed, alive, orbiting, repelling }
+enum SatelliteState {
+  destroyed,
+  alive,
+  orbiting,
+}
 
 enum SatelliteDifficulty { easy, medium, hard, boss, fast }
 
@@ -28,14 +32,15 @@ enum SatelliteCountry {
 class SatelliteComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks, EntityMixin {
   SatelliteComponent({
-    required this.isBelow,
+    super.key,
     super.priority,
+    required this.isBelow,
     required this.difficulty,
-    this.stepUpSpeed,
-    this.stepUpHealth,
     required this.newPosition,
     required this.isTooLate,
     required this.originCountry,
+    this.stepUpSpeed,
+    this.stepUpHealth,
     this.countryName,
   }) {
     void getSpeed(double difficultySpeed) {
@@ -120,7 +125,6 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
   bool get isAlive => state == SatelliteState.alive;
   bool get isDestroyed => state == SatelliteState.destroyed;
   bool get isOrbiting => state == SatelliteState.orbiting;
-  bool get isRepelling => state == SatelliteState.repelling;
 
   SatelliteState get state => _satelliteState ?? SatelliteState.alive;
 
