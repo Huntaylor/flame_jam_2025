@@ -14,10 +14,13 @@ class JupiterComponent extends BodyComponent<SatellitesGame>
   Future<void> onLoad() async {
     priority = 0;
     spriteImage = await game.images.load('planet08.png');
-    final spriteComponent = SpriteComponent.fromImage(spriteImage,
-        size: Vector2.all(22.7),
-        position: game.jupiterPosition,
-        anchor: Anchor.center);
+    final spriteComponent = SpriteComponent.fromImage(
+      spriteImage,
+      size: Vector2.all(22.7),
+      position: game.jupiterPosition,
+      anchor: Anchor.center,
+      priority: 1,
+    );
     add(spriteComponent);
     return super.onLoad();
   }

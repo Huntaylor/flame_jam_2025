@@ -102,7 +102,7 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
         game.jupiterPosition,
       )
       ..length = 25
-      ..frequencyHz = 0.5
+      ..frequencyHz = 0.7
       ..dampingRatio = 0.9;
 
     game.world.createJoint(DistanceJoint(distanceJointDef));

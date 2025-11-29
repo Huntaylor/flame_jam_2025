@@ -82,18 +82,23 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
       case SatelliteCountry.green:
         paint.color = Colors.green;
         countryName = 'Green Country';
+
       case SatelliteCountry.grey:
         countryName = 'Grey Country';
         paint.color = Colors.grey;
+
       case SatelliteCountry.white:
         countryName = 'White Country';
         paint.color = Colors.white;
+
       case SatelliteCountry.brown:
         countryName = 'Brown Country';
         paint.color = Colors.brown;
+
       case SatelliteCountry.cyan:
         countryName = 'Cyan Country';
         paint.color = Colors.cyan;
+
       case SatelliteCountry.pink:
         countryName = 'Pink Country';
         paint.color = Colors.pink;
@@ -163,6 +168,10 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
 
   Vector2? startingImpulse;
 
+  Vector2? orbitImpulse;
+  double orbitSpeedMax = .5;
+  double orbitSpeed = .1;
+
   double? totalHealth;
 
   late AsteroidComponent contactAsteroid;
@@ -194,6 +203,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
 
   @override
   Future<void> onLoad() {
+    debugMode = true;
     if (isBoss) {
       if (game.waveManager.waveNumber > 10) {
         totalHealth = bossArmor + (game.waveManager.waveNumber * 5);
@@ -227,6 +237,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
         game.waveSatellites.remove(this);
       }
       body.setFixedRotation(false);
+      _setOrbitVelocity();
     }
     super.beginContact(other, contact);
   }
@@ -265,6 +276,26 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
             customPaint);
       }
       canvas.restore();
+    } else {
+      const textStyle = TextStyle(
+        color: Colors.amber,
+        fontSize: 4,
+      );
+      final textSpan = TextSpan(
+        text: body.linearVelocity.toString(),
+        style: textStyle,
+      );
+      final textPainter = TextPainter(
+        text: textSpan,
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout(
+        minWidth: 0,
+        maxWidth: 16,
+      );
+
+      final offset = Offset(0, -15);
+      textPainter.paint(canvas, offset);
     }
     super.render(canvas);
 
@@ -277,13 +308,15 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
   @override
   void update(double dt) {
     if (!isTooLate) {
-      if (isBoss) {
-        body.setTransform(
-          position,
-          angle + -turningDirection,
-        );
-      }
       _checkImpulse();
+    } else {
+      _setOrbitVelocity();
+    }
+    if (isBoss) {
+      body.setTransform(
+        position,
+        angle + -turningDirection,
+      );
     }
     if (redirectTimer.isRunning()) {
       redirectTimer.update(dt);
@@ -350,7 +383,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
       case SatelliteDifficulty.fast:
         for (var shape in fastSatellite) {
           final fixtureDef =
-              FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
+              FixtureDef(PolygonShape()..set(shape), isSensor: true);
           _body.createFixture(fixtureDef);
         }
     }
@@ -416,17 +449,39 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
     _body.linearVelocity = startingImpulse!;
   }
 
-  void addBehaviors() {
-    add(
-      SatelliteControllerBehavior(),
-    );
-  }
+  void addBehaviors() => add(
+        SatelliteControllerBehavior(),
+      );
 
   void isBelowFunc(Body _body) {
     if (isBelow) {
       _body.linearVelocity = Vector2(6, 4) * _body.mass;
     } else {
       _body.linearVelocity = Vector2(6, -4) * _body.mass;
+    }
+  }
+
+  void _setOrbitVelocity() {
+    final toComponent = body.position - game.jupiterPosition;
+    final radius = toComponent.length;
+
+    final radialDir = toComponent.normalized();
+
+    Vector2 tangentDir;
+    if (isBelow) {
+      tangentDir = Vector2(-radialDir.y, radialDir.x);
+    } else {
+      tangentDir = Vector2(radialDir.y, -radialDir.x);
+    }
+
+    final tangentialSpeed = orbitSpeed * radius;
+
+    body.linearVelocity = tangentDir * tangentialSpeed;
+
+    if (orbitSpeed < orbitSpeedMax) {
+      orbitSpeed = orbitSpeed + .01;
+    } else {
+      orbitSpeed = orbitSpeedMax;
     }
   }
 }
