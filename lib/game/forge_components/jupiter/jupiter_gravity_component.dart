@@ -6,6 +6,7 @@ import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_componen
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 class JupiterGravityComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks {
@@ -16,7 +17,7 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
             ..strokeWidth = 0.15
             ..style = PaintingStyle.stroke,
         );
-
+  static final Logger _log = Logger('Jupiter Gravity Component');
   final double jupiterGravity = 24.79;
   final double jupiterMass = 254.0;
 
@@ -35,8 +36,11 @@ class JupiterGravityComponent extends BodyComponent<SatellitesGame>
           isBelow: other.isBelow,
           difficulty: other.difficulty,
         );
-
-        game.world.remove(other);
+        try {
+          game.world.remove(other);
+        } catch (e) {
+          _log.severe('Satellite did not remove', e);
+        }
 
         //This is creating two on a rare edgecase? I've noticed it with the fastest ones
         final check = game.orbitingSatellites.firstWhere(

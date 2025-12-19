@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
@@ -6,14 +6,16 @@ import 'package:flame_jam_2025/game/satellites_game.dart';
 
 class JupiterComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks {
-  JupiterComponent({super.priority});
+  JupiterComponent({
+    super.priority,
+  });
 
-  late Image spriteImage;
+  late ui.Image spriteImage;
 
   @override
-  Future<void> onLoad() async {
-    priority = 0;
-    spriteImage = await game.images.load('planet08.png');
+  Future<void> onLoad() {
+    priority = 1;
+    spriteImage = game.jupiterImage;
     final spriteComponent = SpriteComponent.fromImage(
       spriteImage,
       size: Vector2.all(22.7),

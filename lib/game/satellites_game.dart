@@ -61,6 +61,7 @@ class SatellitesGame extends Forge2DGame
   late EarthComponent earthComponent;
   late EarthGravityComponent earthGravityComponent;
 
+  late ui.Image jupiterImage;
   late JupiterComponent jupiterComponent;
   late JupiterGravityComponent jupiterGravityComponent;
   late JupiterGravityRepellentComponent jupiterGravityRepellentComponent;
@@ -163,6 +164,7 @@ class SatellitesGame extends Forge2DGame
     await images.loadAllImages();
 
     spriteImage = await images.load('asteroid.png');
+    jupiterImage = await images.load('planet08.png');
 
     playButton = SatelliteHudButton(
       position: Vector2(50, 450),
@@ -218,18 +220,19 @@ class SatellitesGame extends Forge2DGame
       },
     );
 
-    mouseRenderComponent = MouseRenderComponent();
+    mouseRenderComponent = MouseRenderComponent(priority: 5);
 
     addAll([
       audioComponent,
       playButton,
       muteButton,
     ]);
-    add(mouseRenderComponent);
 
     final viewfinder = Viewfinder();
 
-    jupiterComponent = JupiterComponent();
+    jupiterComponent = JupiterComponent(
+      priority: 1, /* spriteImage: jupiterImage */
+    );
 
     jupiterGravityRepellentComponent = JupiterGravityRepellentComponent();
 
@@ -283,6 +286,7 @@ class SatellitesGame extends Forge2DGame
         jupiterSanityBarComponent..position = Vector2(800, 25),
         storyComponent,
         inGameMuteButton,
+        mouseRenderComponent,
       ],
     );
     spawnAsteroids();
@@ -294,6 +298,7 @@ class SatellitesGame extends Forge2DGame
       jupiterGravityRepellentComponent,
       earthGravityComponent,
     ]);
+    // add(mouseRenderComponent);
 
     return super.onLoad();
   }
@@ -348,7 +353,7 @@ class SatellitesGame extends Forge2DGame
           overlays.add('Game Over');
           if (mouseRenderComponent.parent != null &&
               mouseRenderComponent.parent!.isMounted) {
-            remove(mouseRenderComponent);
+            camera.viewport.remove(mouseRenderComponent);
           }
         }
         if (earthComponent.isDestroyed) {
@@ -356,7 +361,7 @@ class SatellitesGame extends Forge2DGame
           overlays.add('Victory');
           if (mouseRenderComponent.parent != null &&
               mouseRenderComponent.parent!.isMounted) {
-            remove(mouseRenderComponent);
+            camera.viewport.remove(mouseRenderComponent);
           }
         }
         currentLength = orbitingSatellites.length;
@@ -402,7 +407,7 @@ class SatellitesGame extends Forge2DGame
 
   @override
   void onMouseMove(PointerHoverInfo info) {
-    lineSegment = info.eventPosition.global;
+    lineSegment = camera.viewport.globalToLocal(info.eventPosition.global);
     super.onMouseMove(info);
   }
 

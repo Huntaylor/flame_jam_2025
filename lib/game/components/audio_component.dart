@@ -14,7 +14,6 @@ class AudioComponent extends Component with HasGameReference<SatellitesGame> {
         _log.severe('Audio error', e);
       }
     }
-    if (game.isPlaying) {}
   }
 
   onSatelliteDestoryed() async {

@@ -24,32 +24,35 @@ class MouseRenderComponent extends Component
 
   @override
   void render(Canvas canvas) {
-    super.render(canvas);
+    canvas.save();
 
     if (game.gameState != GameState.mainMenu) {
       if (game.asteroids.isNotEmpty &&
           game.lineSegment != null &&
           game.asteroids.any((e) => e.isOrbiting)) {
-        canvas.save();
+        final lineSegment = game.lineSegment!;
+        // canvas.save();
         final firstAsteroids = game.asteroids.firstWhere((e) => e.isOrbiting);
 
-        final position =
-            game.camera.localToGlobal(firstAsteroids.body.worldCenter);
+        final position = game.camera.viewfinder
+            .localToGlobal(firstAsteroids.body.worldCenter);
 
-        final direction = (game.lineSegment! - position).normalized();
+        final direction = (lineSegment - position).normalized();
 
-        final distanceToMouse = position.distanceTo(game.lineSegment!);
+        final distanceToMouse = position.distanceTo(lineSegment);
 
         final totalLength = distanceToMouse + 50.0;
         final endPoint = position + (direction * totalLength);
 
-        _drawDottedLine(canvas, position, endPoint);
-        canvas.restore();
+        _drawDottedLine(canvas: canvas, start: position, end: endPoint);
       }
     }
+    canvas.restore();
+    super.render(canvas);
   }
 
-  void _drawDottedLine(Canvas canvas, Vector2 start, Vector2 end) {
+  void _drawDottedLine(
+      {required Canvas canvas, required Vector2 start, required Vector2 end}) {
     final totalDistance = start.distanceTo(end);
     final direction = (end - start).normalized();
     final patternLength = dashLength + gapLength;

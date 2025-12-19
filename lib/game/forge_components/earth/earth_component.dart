@@ -127,7 +127,7 @@ class EarthComponent extends BodyComponent<SatellitesGame>
   @override
   void render(Canvas canvas) {
     if (isAtWar) {
-      // canvas.save();
+      canvas.save();
       healthBarPaint.color = Colors.white;
       canvas.drawRect(
           Rect.fromLTWH(healthBarPosition.x, healthBarPosition.y,
@@ -141,7 +141,7 @@ class EarthComponent extends BodyComponent<SatellitesGame>
           Rect.fromLTWH(healthBarPosition.x, healthBarPosition.y,
               currentHealthWidth, healthBarHeight),
           healthBarPaint);
-      // canvas.restore();
+      canvas.restore();
     }
 
     super.render(canvas);

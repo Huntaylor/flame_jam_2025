@@ -11,6 +11,7 @@ import 'package:flame_jam_2025/game/forge_components/satellite/behaviors/satelli
 import 'package:flame_jam_2025/game/forge_components/satellite/behaviors/satellite_shapes.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 enum SatelliteState {
   destroyed,
@@ -104,7 +105,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
         paint.color = Colors.pink;
     }
   }
-
+  static final Logger _log = Logger('Satellite Component');
   String? countryName;
 
   final SatelliteCountry originCountry;
@@ -200,10 +201,9 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
 
   late final SatelliteControllerBehavior controllerBehavior =
       findBehavior<SatelliteControllerBehavior>();
-
   @override
   Future<void> onLoad() {
-    debugMode = true;
+    // debugMode = true;
     if (isBoss) {
       if (game.waveManager.waveNumber > 10) {
         totalHealth = bossArmor + (game.waveManager.waveNumber * 5);
@@ -276,7 +276,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
             customPaint);
       }
       canvas.restore();
-    } else {
+    } else if (debugMode) {
       const textStyle = TextStyle(
         color: Colors.amber,
         fontSize: 4,
