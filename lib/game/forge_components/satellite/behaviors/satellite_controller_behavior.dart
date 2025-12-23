@@ -45,7 +45,11 @@ class SatelliteControllerBehavior extends Behavior<SatelliteComponent>
   void takeDamage(double damage) {
     if (!parent.isTooLate) {
       parent.currentHealth = parent.currentHealth - damage;
+
       if (parent.currentHealth <= 0 && parent.isAlive) {
+        if (parent.currentHealth < 0) {
+          parent.currentHealth = 0;
+        }
         destroySatellite(true);
       }
     }

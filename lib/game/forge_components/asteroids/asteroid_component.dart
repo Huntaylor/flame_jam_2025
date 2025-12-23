@@ -76,9 +76,9 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
 
   @override
   Future<void> onLoad() {
-    addSprite();
-    // currentDamage = 250;
-    currentDamage = startingDamage;
+    // addSprite();
+    currentDamage = 250;
+    // currentDamage = startingDamage;
     _log.info('Current damage: $currentDamage');
 
     addBehaviors();
@@ -116,7 +116,8 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
     if (other is EarthGravityComponent) {
       _log.info('Game manager state: $currentDamage & ${other.damageMinimum}');
       _log.info(other.damageMinimum > currentDamage);
-      if (game.waveManager.hasEnded || other.damageMinimum > currentDamage) {
+      if (/* game.waveManager.hasEnded || */ other.damageMinimum >
+          currentDamage) {
         controllerBehavior.explodeAsteroid(position, this);
       }
     } else if (other is EarthComponent) {

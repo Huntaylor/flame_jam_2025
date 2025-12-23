@@ -164,12 +164,13 @@ class AsteroidSpawnManager extends Component
       newAsteroids = List<AsteroidComponent>.generate(
         missingAsteroids,
         (index) {
+          final isBehindJupiter = rnd.nextBool();
           final targetList = target == OrbitTarget.bottom
               ? bottomTargetLocations
               : topTargetLocations;
 
           return AsteroidComponent(
-            priority: 3,
+            priority: isBehindJupiter ? 0 : 3,
             spriteImage: game.spriteImage,
             impulseDirection: impulseDirection(
               orbitTargetLocation: targetList[rnd.nextInt(9)],

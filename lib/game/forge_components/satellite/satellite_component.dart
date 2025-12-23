@@ -355,28 +355,28 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
       case SatelliteDifficulty.easy:
         for (var shape in smallerSatellite) {
           final fixtureDef =
-              FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
+              FixtureDef(PolygonShape()..set(shape), isSensor: true);
           _body.createFixture(fixtureDef);
         }
 
       case SatelliteDifficulty.medium:
         for (var shape in mediumSatellite) {
           final fixtureDef =
-              FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
+              FixtureDef(PolygonShape()..set(shape), isSensor: true);
           _body.createFixture(fixtureDef);
         }
 
       case SatelliteDifficulty.hard:
         for (var shape in hardSatellite) {
           final fixtureDef =
-              FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
+              FixtureDef(PolygonShape()..set(shape), isSensor: true);
           _body.createFixture(fixtureDef);
         }
 
       case SatelliteDifficulty.boss:
         for (var shape in bossSatellite) {
           final fixtureDef =
-              FixtureDef(PolygonShape()..set(shape), isSensor: !isTooLate);
+              FixtureDef(PolygonShape()..set(shape), isSensor: true);
           _body.createFixture(fixtureDef);
         }
 

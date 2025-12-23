@@ -69,8 +69,11 @@ class StoryComponent extends PositionComponent
           growingBox: true,
         ),
         textRenderer: TextPaint(
-            style: SatellitesTextStyle.headlineSmall
-                .copyWith(fontSize: 12, color: Colors.blueGrey[100])),
+          style: SatellitesTextStyle.headlineSmall.copyWith(
+            fontSize: 12,
+            color: Colors.blueGrey[100],
+          ),
+        ),
         text: storyLine[0],
         onComplete: () => readingTimer.start(),
         position: Vector2.zero(),
@@ -109,10 +112,10 @@ class StoryComponent extends PositionComponent
       if (readingTimer.isRunning()) {
         readingTimer.update(dt);
       }
-      if (game.waveManager.hasEnded &&
+      if (/* game.waveManager.hasEnded && */
           isFinished &&
-          game.gameState != GameState.end &&
-          !game.earthComponent.isDestroyed) {
+              game.gameState != GameState.end &&
+              !game.earthComponent.isDestroyed) {
         isFinished = false;
         addStory();
       }

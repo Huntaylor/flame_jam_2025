@@ -18,8 +18,14 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
   UpgradeComponent({
     required this.type,
     super.paint,
+    super.priority,
     required this.newPosition,
   });
+
+  final rnd = Random();
+
+  double fixedDeltaTime = 1 / 60;
+  double accumulatedTime = 0;
 
   final UpgradeType type;
 
@@ -31,46 +37,17 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
 
   late Timer deathTimer;
 
-  // late TextComponent typeNameComponent;
-  // late String text;
-
-  final newPaint = Paint();
-
-  final particleShape = [
-    Vector2(0, .1),
-    Vector2(-.1, -.1),
-    Vector2(-.1, .1),
-  ];
-
-  final starShape = [
-    [
-      Vector2(0, 1) * 2,
-      Vector2(-0.5, 0) * 2,
-      Vector2(0.5, 0) * 2,
-    ],
-    [
-      Vector2(-0.5, 0) * 2,
-      Vector2(0, -1) * 2,
-      Vector2(0.5, 0) * 2,
-    ],
-    [
-      Vector2(-1, 0) * 2,
-      Vector2(0, 0.5) * 2,
-      Vector2(0, -0.5) * 2,
-    ],
-    [
-      Vector2(1, 0) * 2,
-      Vector2(0, 0.5) * 2,
-      Vector2(0, -0.5) * 2,
-    ],
-  ];
-
   late ui.Image damageImage;
   late ui.Image quantityImage;
   late ui.Image sizeImage;
   late ui.Image speedImage;
 
+  final newPaint = Paint();
+
   late SpriteComponent spriteComponent;
+
+  Color lerpColor1 = Colors.yellow;
+  Color lerpColor2 = Colors.amber[900]!;
 
   @override
   Future<void> onLoad() async {
@@ -88,23 +65,36 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
     );
     switch (type) {
       case UpgradeType.speed:
-        paint.color = Colors.yellow;
-        // text = 'Speed';
+        // paint.color = Colors.yellow;
+        lerpColor1 = Colors.amber[900]!;
+        lerpColor2 = Colors.yellow;
+
         spriteImage = speedImage;
+
       case UpgradeType.size:
-        paint.color = Colors.cyan;
-        // text = 'Size';
+        // paint.color = Colors.cyan;
+
+        lerpColor1 = Colors.deepOrange[900]!;
+        lerpColor2 = Colors.orange;
         spriteImage = sizeImage;
+
       case UpgradeType.damage:
-        paint.color = Colors.orange;
-        // text = 'Damage';
+        // paint.color = Colors.orange;
+        lerpColor1 = Colors.blue[900]!;
+        lerpColor2 = Colors.cyan;
+
         spriteImage = damageImage;
+
       case UpgradeType.quantity:
-        paint.color = Colors.teal;
-        // text = 'Quantity';
+        // paint.color = Colors.teal;
+        lerpColor1 = Colors.green[900]!;
+        lerpColor2 = Colors.teal;
+
         spriteImage = quantityImage;
     }
 
+    paint.color = lerpColor1;
+    priority = 4;
     spriteComponent = SpriteComponent.fromImage(spriteImage,
         size: Vector2.all(2),
         position: game.earthPosition,
@@ -113,51 +103,68 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
 
     game.world.add(spriteComponent);
 
-    newPaint.color = paint.color;
-
     return super.onLoad();
   }
 
-  addParticles(Vector2 _position) {
-    final shrinkingParticle = ParticleSystemComponent(
+  void addParticles(Vector2 _position) {
+    final tailParticles = ParticleSystemComponent(
+      priority: 1,
       position: _position.clone(),
       anchor: Anchor.center,
       particle: parts.ScalingParticle(
         to: 0,
-        lifespan: 1,
-        child: parts.ComponentParticle(
-          component: PolygonComponent(particleShape)..setColor(newPaint.color),
+        lifespan: .50,
+        child: parts.AcceleratedParticle(
+          acceleration: Vector2(body.linearVelocity.x, -body.linearVelocity.y),
+          speed: getConsistentSpeed(),
+          child: parts.ComputedParticle(
+            renderer: (canvas, particle) {
+              canvas.drawCircle(
+                Offset.zero,
+                1.5,
+                newPaint
+                  ..color = Color.lerp(
+                    lerpColor1,
+                    lerpColor2,
+                    particle.progress,
+                  )!,
+              );
+            },
+          ),
         ),
       ),
     );
-    game.world.add(shrinkingParticle);
+    game.world.add(tailParticles);
   }
 
-  void newParticles() {
+  void newParticles(Vector2 otherVelocity) {
     List<ParticleSystemComponent> particles = [];
-    for (var star in starShape) {
-      final celebrateParticles = ParticleSystemComponent(
-        position: position,
-        anchor: Anchor.center,
-        particle: parts.AcceleratedParticle(
-          lifespan: .5,
-          speed: game.randomVector2() / 5,
-          child: parts.RotatingParticle(
-            to: pi,
-            child: parts.ScalingParticle(
-              to: 0,
-              child: parts.ComponentParticle(
-                component: PolygonComponent(star)
-                  ..setColor(newPaint.color)
-                  ..debugMode = true,
-              ),
+    final celebrateParticles = ParticleSystemComponent(
+      position: position,
+      anchor: Anchor.center,
+      particle: parts.Particle.generate(
+        count: 5,
+        lifespan: .5,
+        generator: (i) => parts.AcceleratedParticle(
+          speed: getSpeed(otherVelocity, i),
+          child: parts.ScalingParticle(
+            to: 0,
+            child: parts.CircleParticle(
+              paint: paint,
+              radius: 1.5,
             ),
           ),
         ),
-      );
-      particles.add(celebrateParticles);
-    }
+      ),
+    );
+    particles.add(celebrateParticles);
     game.world.addAll(particles);
+  }
+
+  Vector2 getSpeed(Vector2 otherVelocity, int i) {
+    double xSpeed = otherVelocity.x + (i + (rnd.nextDouble() - 15));
+    double ySpeed = otherVelocity.y + (i - (rnd.nextDouble() + 15));
+    return Vector2(xSpeed, ySpeed);
   }
 
   @override
@@ -165,7 +172,7 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
     if (other is AsteroidComponent && other.isFiring && !isCollected) {
       game.audioComponent.onPowerUp();
       isCollected = true;
-      newParticles();
+      newParticles(other.body.linearVelocity);
       other.controllerBehavior.gainedUpgrade(type);
 
       try {
@@ -190,22 +197,27 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
 
   @override
   void update(double dt) {
-    spriteComponent.position = position;
-    if (!isCollected) {
-      addParticles(position);
-      if (body.linearVelocity != fireVel) {
-        body.linearVelocity = fireVel;
-      }
-    }
+    accumulatedTime += dt;
 
-    if (!game.camera.visibleWorldRect.containsPoint(position) &&
-        !deathTimer.isRunning()) {
-      deathTimer.start();
-    } else if (deathTimer.isRunning()) {
-      deathTimer.update(dt);
-    }
-    if (!isCollected) {
-      body.setTransform(position, angle + .015);
+    while (accumulatedTime >= fixedDeltaTime) {
+      spriteComponent.position = position;
+      if (!isCollected) {
+        addParticles(position);
+        if (body.linearVelocity != fireVel) {
+          body.linearVelocity = fireVel;
+        }
+      }
+
+      if (!game.camera.visibleWorldRect.containsPoint(position) &&
+          !deathTimer.isRunning()) {
+        deathTimer.start();
+      } else if (deathTimer.isRunning()) {
+        deathTimer.update(dt);
+      }
+      if (!isCollected) {
+        body.setTransform(position, angle + .015);
+      }
+      accumulatedTime -= fixedDeltaTime;
     }
     super.update(dt);
   }
@@ -220,13 +232,11 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
     );
 
     final body = world.createBody(def)..userData = this;
-    for (var shape in starShape) {
-      final fixtureDef = FixtureDef(
-        PolygonShape()..set(shape),
-        isSensor: true,
-      );
-      body.createFixture(fixtureDef);
-    }
+    final fixtureDef = FixtureDef(
+      CircleShape(radius: 1.5),
+      isSensor: true,
+    );
+    body.createFixture(fixtureDef);
 
     final corner = Vector2(game.camera.visibleWorldRect.size.width, 10);
 
@@ -244,5 +254,14 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
     body.linearVelocity = fireVel;
 
     return body;
+  }
+
+  Vector2 getConsistentSpeed() {
+    double ySpeed = rnd.nextDouble() * (10 + body.linearVelocity.y);
+    double xSpeed = rnd.nextDouble() * (2 - body.linearVelocity.x);
+    return Vector2(
+      xSpeed,
+      ySpeed,
+    );
   }
 }

@@ -8,7 +8,9 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/parallax.dart';
 import 'package:flame_audio/flame_audio.dart';
+import 'package:flame_bloc/flame_bloc.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
+import 'package:flame_jam_2025/game/blocs/wave/wave_bloc.dart';
 import 'package:flame_jam_2025/game/components/audio_component.dart';
 import 'package:flame_jam_2025/game/components/mouse_render_component.dart';
 import 'package:flame_jam_2025/game/components/satellite_hud_button.dart';
@@ -30,7 +32,8 @@ enum GameState { mainMenu, start, end, victory }
 
 class SatellitesGame extends Forge2DGame
     with TapCallbacks, MouseMovementDetector {
-  SatellitesGame({required this.isPlaying}) : super(gravity: Vector2(0, 0)) {
+  SatellitesGame({required this.isPlaying, required this.waveBloc})
+      : super(gravity: Vector2(0, 0)) {
     jupiterSize = 9;
     earthSize = (jupiterSize / 11);
     earthPosition = Vector2.all(15);
@@ -40,7 +43,9 @@ class SatellitesGame extends Forge2DGame
     asteroidAngle = Vector2(5, -20);
   }
   static final Logger _log = Logger('Satellite Game');
+
   bool playSounds = true;
+
   final double smallDamage = 25;
   final double mediumDamage = 50;
   final double heavyDamage = 75;
@@ -100,6 +105,8 @@ class SatellitesGame extends Forge2DGame
   bool isGameStarted = false;
   bool hidHud = false;
   bool isPlaying;
+
+  final WaveBloc waveBloc;
 
   String waveText = '';
   String satellitesLeftText = '';
@@ -176,6 +183,8 @@ class SatellitesGame extends Forge2DGame
         ),
       ),
       onPressed: () {
+        waveBloc.add(WaveStarted());
+
         return gameState = GameState.start;
       },
     );
@@ -289,7 +298,6 @@ class SatellitesGame extends Forge2DGame
         mouseRenderComponent,
       ],
     );
-    spawnAsteroids();
 
     world.addAll([
       jupiterComponent,
@@ -298,12 +306,40 @@ class SatellitesGame extends Forge2DGame
       jupiterGravityRepellentComponent,
       earthGravityComponent,
     ]);
-    // add(mouseRenderComponent);
+
+    waveManager = WaveManager(
+      impulseTargets: [
+        Vector2(158.0, 40.0),
+        Vector2(155.0, 45.0),
+        Vector2(156.0, 50.0),
+        Vector2(155.0, 55.0),
+        Vector2(154.0, 60.0),
+        Vector2(145.0, 90.0),
+        Vector2(145.0, 95.0),
+        Vector2(140.0, 99.0),
+        Vector2(140.0, 100.0),
+        Vector2(130.0, 100.0),
+      ],
+    );
+
+    await add(
+      FlameMultiBlocProvider(
+        providers: [
+          FlameBlocProvider<WaveBloc, WaveState>.value(
+            value: waveBloc,
+            children: [
+              camera,
+              waveManager,
+            ],
+          ),
+        ],
+      ),
+    );
 
     return super.onLoad();
   }
 
-  updateSound() {
+  void updateSound() {
     if (!isPlaying) {
       FlameAudio.bgm.pause();
     } else {
@@ -311,7 +347,7 @@ class SatellitesGame extends Forge2DGame
     }
   }
 
-  setUpAudio() async {
+  Future<void> setUpAudio() async {
     await FlameAudio.bgm.initialize();
     await FlameAudio.bgm.play('ville_seppanen-1_g.mp3', volume: 0.5);
     isPlaying = FlameAudio.bgm.isPlaying;
@@ -374,7 +410,7 @@ class SatellitesGame extends Forge2DGame
   void setUpWaves() {
     asteroidSpawnManager = AsteroidSpawnManager();
 
-    waveManager = WaveManager(
+    /*   waveManager = WaveManager(
       impulseTargets: [
         Vector2(158.0, 40.0),
         Vector2(155.0, 45.0),
@@ -387,22 +423,8 @@ class SatellitesGame extends Forge2DGame
         Vector2(140.0, 100.0),
         Vector2(130.0, 100.0),
       ],
-    );
-    world.addAll([waveManager, asteroidSpawnManager]);
-  }
-
-  void spawnAsteroids() {
-    for (var vec in startingPoints) {
-      final isBehindJupiter = rnd.nextBool();
-      final asteroid = AsteroidComponent(
-        spriteImage: spriteImage,
-        startPosition: vec,
-        startingDamage: smallDamage,
-        priority: isBehindJupiter ? 0 : 3,
-      );
-      asteroids.add(asteroid);
-      world.add(asteroid);
-    }
+    ); */
+    world.addAll([/* waveManager, */ asteroidSpawnManager]);
   }
 
   @override

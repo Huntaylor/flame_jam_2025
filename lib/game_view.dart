@@ -1,10 +1,12 @@
 import 'package:app_ui/app_ui.dart';
 import 'package:flame/game.dart';
+import 'package:flame_jam_2025/game/blocs/wave/wave_bloc.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flame_jam_2025/overlays/game_over.dart';
 import 'package:flame_jam_2025/overlays/pause_menu.dart';
 import 'package:flame_jam_2025/overlays/victory.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class MyGame extends StatelessWidget {
   const MyGame({
@@ -16,14 +18,17 @@ class MyGame extends StatelessWidget {
     final args = ModalRoute.of(context)?.settings.arguments;
     bool isPlaying;
     if (args == null) {
-      isPlaying = true;
+      isPlaying = false;
     } else {
       isPlaying = args as bool;
     }
 
-    return Material(
-      child: GameView(
-        isPlaying: isPlaying,
+    return MultiBlocProvider(
+      providers: [BlocProvider<WaveBloc>(create: (_) => WaveBloc())],
+      child: Material(
+        child: GameView(
+          isPlaying: isPlaying,
+        ),
       ),
     );
   }
@@ -51,8 +56,10 @@ class _GameViewState extends State<GameView> {
             'Victory': (_, game) => VictoryOverlay(game: game),
             'Pause Menu': (_, game) => PauseMenu(game: game),
           },
-          gameFactory: () =>
-              SatellitesGame(isPlaying: widget.isPlaying ?? true),
+          gameFactory: () => SatellitesGame(
+            isPlaying: widget.isPlaying ?? true,
+            waveBloc: context.read<WaveBloc>(),
+          ),
         ),
       ),
     );

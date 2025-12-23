@@ -24,14 +24,14 @@ class MouseRenderComponent extends Component
 
   @override
   void render(Canvas canvas) {
-    canvas.save();
+    super.render(canvas);
 
     if (game.gameState != GameState.mainMenu) {
       if (game.asteroids.isNotEmpty &&
           game.lineSegment != null &&
           game.asteroids.any((e) => e.isOrbiting)) {
         final lineSegment = game.lineSegment!;
-        // canvas.save();
+        canvas.save();
         final firstAsteroids = game.asteroids.firstWhere((e) => e.isOrbiting);
 
         final position = game.camera.viewfinder
@@ -45,10 +45,9 @@ class MouseRenderComponent extends Component
         final endPoint = position + (direction * totalLength);
 
         _drawDottedLine(canvas: canvas, start: position, end: endPoint);
+        canvas.restore();
       }
     }
-    canvas.restore();
-    super.render(canvas);
   }
 
   void _drawDottedLine(

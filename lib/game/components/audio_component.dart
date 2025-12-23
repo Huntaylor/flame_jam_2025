@@ -6,7 +6,7 @@ import 'package:logging/logging.dart';
 class AudioComponent extends Component with HasGameReference<SatellitesGame> {
   AudioComponent();
   static final Logger _log = Logger('Asteroid Component');
-  onAsteroidDestoryed() async {
+  Future<void> onAsteroidDestoryed() async {
     if (game.isPlaying) {
       try {
         await FlameAudio.play('explosion.wav', volume: 0.1);
@@ -16,7 +16,7 @@ class AudioComponent extends Component with HasGameReference<SatellitesGame> {
     }
   }
 
-  onSatelliteDestoryed() async {
+  Future<void> onSatelliteDestoryed() async {
     if (game.isPlaying) {
       try {
         await FlameAudio.play('satellite_explosion.wav', volume: 0.1);
@@ -26,7 +26,7 @@ class AudioComponent extends Component with HasGameReference<SatellitesGame> {
     }
   }
 
-  onEnterOrbit() async {
+  Future<void> onEnterOrbit() async {
     if (game.isPlaying) {
       try {
         await FlameAudio.play('entering_orbit.wav', volume: 0.1);
@@ -36,7 +36,7 @@ class AudioComponent extends Component with HasGameReference<SatellitesGame> {
     }
   }
 
-  onPowerUp() async {
+  Future<void> onPowerUp() async {
     if (game.isPlaying) {
       try {
         await FlameAudio.play('powerUp.wav', volume: 0.1);

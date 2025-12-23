@@ -36,12 +36,12 @@ class JupiterComponent extends BodyComponent<SatellitesGame>
     );
     final body = world.createBody(def)..userData = this;
 
-    final circle = CircleShape(
-      position: game.jupiterPosition,
-      radius: game.jupiterSize,
-    );
+    // final circle = CircleShape(
+    //   position: game.jupiterPosition,
+    //   radius: game.jupiterSize,
+    // );
 
-    body.createFixtureFromShape(circle);
+    // body.createFixtureFromShape(circle);
     body.synchronizeFixtures();
 
     return body;
