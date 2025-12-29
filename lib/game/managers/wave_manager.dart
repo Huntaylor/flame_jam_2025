@@ -64,8 +64,8 @@ class WaveManager extends Component
   @override
   void onNewState(WaveState state) {
     waveNumber = state.waveNumber;
-    if (state.status == WaveStatus.start) {
-      spawnTimer.start();
+    if (state.status == WaveStatus.start && !state.triggerStory) {
+      bloc.add(WaveStoryProgress());
       pendingSpawn = state.pendingSpawn;
       if (state.waveNumber > 17) {
         final suddenLaunch = rnd.nextInt(20);
@@ -124,7 +124,8 @@ class WaveManager extends Component
     if (waveTimer.isRunning()) {
       waveTimer.update(dt);
     }
-    if (game.isGameStarted && game.gameState != GameState.end) {
+    // if (game.isGameStarted && game.gameState != LocalGameState.end) {
+    if (game.gameBloc.state.isStart) {
       if (!upgradeTimer.isRunning()) {
         upgradeTimer.start();
       }

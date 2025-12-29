@@ -2,19 +2,34 @@ import 'dart:async';
 
 import 'package:app_ui/app_ui.dart';
 import 'package:flame/components.dart';
+import 'package:flame_bloc/flame_bloc.dart';
+import 'package:flame_jam_2025/game/blocs/wave/wave_bloc.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
 class StoryComponent extends PositionComponent
-    with HasGameReference<SatellitesGame> {
+    with
+        HasGameReference<SatellitesGame>,
+        FlameBlocListenable<WaveBloc, WaveState> {
   StoryComponent({
     super.position,
     super.anchor,
     super.size,
     super.scale,
   });
+
+  @override
+  void onNewState(WaveState state) {
+    if (!isStoryStarted && state.triggerStory) {
+      startStory();
+    } else if (state.triggerStory) {
+      addStory();
+    }
+    super.onNewState(state);
+  }
+
   static final Logger _log = Logger('Story Component');
   late TextBoxComponent storyComponent;
 
@@ -27,6 +42,7 @@ class StoryComponent extends PositionComponent
   String bestCountryName = '';
 
   bool isWarTriggered = false;
+  bool isStoryStarted = false;
 
   int bestCountryCount = 0;
 
@@ -51,7 +67,7 @@ class StoryComponent extends PositionComponent
       onTick: () {
         isFinished = true;
         if (game.earthComponent.isAtWar) isWarTriggered = true;
-
+        bloc.add(WaveStoryEnd());
         game.waveManager.spawnTimer.start();
         removeStory();
       },
@@ -61,6 +77,7 @@ class StoryComponent extends PositionComponent
   }
 
   void startStory() {
+    isStoryStarted = true;
     add(
       TextBoxComponent(
         align: Anchor.center,
@@ -85,52 +102,47 @@ class StoryComponent extends PositionComponent
     removeWhere((e) => e is TextBoxComponent);
   }
 
-  void addStory() {
+  Future<void> addStory() async {
     _log.info('Adding Story');
     currentWinningCountry();
-    _log.info(updateText());
+    _log.info(await updateText());
 
-    add(TextBoxComponent(
-      priority: 5,
-      align: Anchor.center,
-      boxConfig: TextBoxConfig(
-        timePerChar: 0.05,
-        growingBox: true,
+    add(
+      TextBoxComponent(
+        priority: 5,
+        align: Anchor.center,
+        boxConfig: TextBoxConfig(
+          timePerChar: 0.05,
+          growingBox: true,
+        ),
+        textRenderer: TextPaint(
+            style: SatellitesTextStyle.headlineSmall
+                .copyWith(fontSize: 12, color: Colors.blueGrey[100])),
+        text: await updateText(),
+        onComplete: () => readingTimer.start(),
+        position: Vector2.zero(),
       ),
-      textRenderer: TextPaint(
-          style: SatellitesTextStyle.headlineSmall
-              .copyWith(fontSize: 12, color: Colors.blueGrey[100])),
-      text: updateText(),
-      onComplete: () => readingTimer.start(),
-      position: Vector2.zero(),
-    ));
+    );
   }
 
   @override
   void update(double dt) {
-    if (game.gameState != GameState.end || !game.earthComponent.isDestroyed) {
+    if (game.gameBloc.state.isNotGameOver || !game.earthComponent.isDestroyed) {
       if (readingTimer.isRunning()) {
         readingTimer.update(dt);
-      }
-      if (/* game.waveManager.hasEnded && */
-          isFinished &&
-              game.gameState != GameState.end &&
-              !game.earthComponent.isDestroyed) {
-        isFinished = false;
-        addStory();
       }
     }
     super.update(dt);
   }
 
-  String updateText() {
+  Future<String> updateText() async {
     final isEarthAtWar = game.earthComponent.isAtWar;
     final isEarthPeaceful = game.earthComponent.isPeaceful;
     _log.info('Update Text');
 
 //?game.waveManager.waveNumber will be the wave that was just completed
 
-    int index = game.waveManager.waveNumber + 1;
+    int index = bloc.state.waveNumber;
     if (isEarthAtWar) {
       _log.info('Triggering war');
       if (!isWarTriggered) {
@@ -141,80 +153,90 @@ class StoryComponent extends PositionComponent
     } else if (game.orbitingSatellites.isNotEmpty &&
         game.destroyedSatellites.isEmpty &&
         isEarthPeaceful) {
-      _log.info('Current index: $index');
-      switch (index) {
-        case 2:
-          return notBreaking[0];
-        case 3:
-          return notBreaking[1];
-        case 4:
-          return notBreaking[2];
-        case 14:
-          return currentWinningCountry();
-
-        default:
-          return '';
-      }
+      return _notBreakingSatellitesScenario(index);
     } else if (isEarthPeaceful) {
-      _log.info('Current index: $index');
-      switch (index) {
-        case 2:
-          return storyLine[1];
-        case 4:
-          return storyLine[2];
-        case 6:
-          return (game.orbitingSatellites.length < 5)
-              ? storyLine[8]
-              : storyLine[7];
-        case 10:
-          return storyLine[3];
-        case 11:
-          return storyLine[4];
-        case 14:
-          return currentWinningCountry();
-        case 15:
-          return storyLine[5];
-        case 20:
-          return storyLine[6];
-        case 21:
-          return storyLine[9];
-        case 24:
-          return currentWinningCountry();
-        case 31:
-          return storyLine[10];
-        case 34:
-          return currentWinningCountry();
-        case 36:
-          return storyLine[12];
-        case 44:
-          return currentWinningCountry();
-        case 46:
-          return storyLine[13];
-        case 50:
-          return storyLine[11];
-        case 54:
-          return currentWinningCountry();
-        case 56:
-          return storyLine[14];
-        case 64:
-          return currentWinningCountry();
-        case 74:
-          return currentWinningCountry();
-        case 84:
-          return currentWinningCountry();
-        case 90:
-          return storyLine[11];
-        case 94:
-          return currentWinningCountry();
-        case 99:
-          return 'Breaking News! Jupiter has now reached Wave 100! Can this next wave be beaten?';
-        case 100:
-          return 'Breaking News! Note from developer, Congrats on getting this far! I hope you are enjoying the game. You should destroy earth by the way.';
-        default:
-          return '';
-      }
+      return _satellitesInOrbitScenario(index);
     } else {
       return (isEarthPeaceful) ? '' : 'THIS IS WAR';
+    }
+  }
+
+  String _notBreakingSatellitesScenario(int index) {
+    _log.info('Not Breaking Satellies current index: $index');
+    switch (index) {
+      case 2:
+        return notBreaking[0];
+      case 3:
+        return notBreaking[1];
+      case 4:
+        return notBreaking[2];
+      case 14:
+        return currentWinningCountry();
+
+      default:
+        return '';
+    }
+  }
+
+  String _satellitesInOrbitScenario(int index) {
+    _log.info('Satellies in Orbit current index: $index');
+    switch (index) {
+      case 2:
+        return storyLine[1];
+      case 4:
+        return storyLine[2];
+      case 6:
+        return (game.orbitingSatellites.isEmpty)
+            ? 'Breaking News! Scientists are baffled that no satellies have made it to Jupiter, but are even more encouraged to get there.'
+            : (game.orbitingSatellites.length < 5)
+                ? storyLine[8]
+                : storyLine[7];
+      case 10:
+        return storyLine[3];
+      case 11:
+        return storyLine[4];
+      case 14:
+        return currentWinningCountry();
+      case 15:
+        return storyLine[5];
+      case 20:
+        return storyLine[6];
+      case 21:
+        return storyLine[9];
+      case 24:
+        return currentWinningCountry();
+      case 31:
+        return storyLine[10];
+      case 34:
+        return currentWinningCountry();
+      case 36:
+        return storyLine[12];
+      case 44:
+        return currentWinningCountry();
+      case 46:
+        return storyLine[13];
+      case 50:
+        return storyLine[11];
+      case 54:
+        return currentWinningCountry();
+      case 56:
+        return storyLine[14];
+      case 64:
+        return currentWinningCountry();
+      case 74:
+        return currentWinningCountry();
+      case 84:
+        return currentWinningCountry();
+      case 90:
+        return storyLine[11];
+      case 94:
+        return currentWinningCountry();
+      case 99:
+        return 'Breaking News! Jupiter has now reached Wave 100! Can this next wave be beaten?';
+      case 100:
+        return 'Breaking News! Note from developer, Congrats on getting this far! I hope you are enjoying the game. You should destroy earth by the way.';
+      default:
+        return '';
     }
   }
 
@@ -315,9 +337,9 @@ class StoryComponent extends PositionComponent
     //11
     'Breaking News! Congrats on getting this far! How\'s the performance?'
         //12
-        'Breaking News! Toilet paper is now running out due to mass panic over the amount of asteroids being destroyed!'
+        'Breaking News! Toilet paper is now running out due to mass panic over the amount of satellites being destroyed!'
         //13
-        'Breaking News! Critics say they want their donations to go to something more useful. Countries willfully ignore said requests.'
+        'Breaking News! Critics say they want their donations to go to something more useful. Governments have yet to respond.'
         //14
         'Breaking News! The budget for the new popular movie series is said to be over the cost of all the satellites that have been destroyed as of now. Critics say it looks quote \'mid\'.'
   ];

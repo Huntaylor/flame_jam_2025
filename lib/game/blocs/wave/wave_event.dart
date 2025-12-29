@@ -15,6 +15,10 @@ class WaveEnded extends WaveEvent {}
 
 class WaveInProgress extends WaveEvent {}
 
+class WaveStoryProgress extends WaveEvent {}
+
+class WaveStoryEnd extends WaveEvent {}
+
 class EarthWarStarted extends WaveEvent {
   const EarthWarStarted({required this.isAtWar});
   final bool isAtWar;

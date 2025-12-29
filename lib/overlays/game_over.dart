@@ -69,7 +69,6 @@ class GameOver extends StatelessWidget {
               ),
               ElevatedButton(
                 onPressed: () {
-                  game.gameState == GameState.mainMenu;
                   Navigator.of(context).pushReplacementNamed('NewGame');
                   game.overlays.remove('Game Over');
                 },
@@ -77,7 +76,7 @@ class GameOver extends StatelessWidget {
                   backgroundColor: Colors.grey,
                 ),
                 child: const Text(
-                  'Play Again',
+                  'Main Menu',
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.black,

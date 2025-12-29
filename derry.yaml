@@ -18,5 +18,3 @@ spider init: spider create --add-in-pubspec
 sbuild: spider build
 
 webbuild: flutter build web --release --wasm
-
-brunner: dart run build_runner build --delete-conflicting-outputs

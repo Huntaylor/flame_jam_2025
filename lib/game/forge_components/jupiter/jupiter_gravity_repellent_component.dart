@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
-import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 
@@ -19,7 +18,6 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatellitesGame>
         );
 
   List<AsteroidComponent> orbitingAsteroids = [];
-  List<SatelliteComponent> orbitingSatellites = [];
 
   final double jupiterGravity = 24.79;
   final double jupiterMass = 254.0;
@@ -29,10 +27,7 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatellitesGame>
     if (other is AsteroidComponent) {
       orbitingAsteroids.add(other);
       other.shouldRepel = true;
-    } /* else if (other is SatelliteComponent) {
-      other.state = SatelliteState.repelling;
-      orbitingSatellites.add(other);
-    } */
+    }
     super.beginContact(other, contact);
   }
 
@@ -47,10 +42,7 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatellitesGame>
 
         orbitingAsteroids.remove(asteroidBody);
       }
-    } /*  else if (other is SatelliteComponent) {
-      other.state = SatelliteState.orbiting;
-      orbitingSatellites.remove(other);
-    } */
+    }
     super.endContact(other, contact);
   }
 
@@ -64,12 +56,6 @@ class JupiterGravityRepellentComponent extends BodyComponent<SatellitesGame>
         }
       }
     }
-    // SATELLITES
-    // if (orbitingSatellites.isNotEmpty) {
-    //   for (var satellite in orbitingSatellites) {
-    //     applyRepellent(satellite.body, dt);
-    //   }
-    // }
     super.update(dt);
   }
 

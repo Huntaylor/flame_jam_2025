@@ -26,7 +26,7 @@ class MouseRenderComponent extends Component
   void render(Canvas canvas) {
     super.render(canvas);
 
-    if (game.gameState != GameState.mainMenu) {
+    if (game.gameBloc.state.isNotMainMenu) {
       if (game.asteroids.isNotEmpty &&
           game.lineSegment != null &&
           game.asteroids.any((e) => e.isOrbiting)) {

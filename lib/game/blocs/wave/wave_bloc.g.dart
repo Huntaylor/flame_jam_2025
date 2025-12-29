@@ -37,6 +37,8 @@ abstract class _$WaveStateCWProxy {
 
   WaveState satellites(List<SatelliteComponent> satellites);
 
+  WaveState triggerStory(bool triggerStory);
+
   /// Creates a new instance with the provided field values.
   /// Passing `null` to a nullable field nullifies it, while `null` for a non-nullable field is ignored. To update a single field use `WaveState(...).copyWith.fieldName(value)`.
   ///
@@ -60,6 +62,7 @@ abstract class _$WaveStateCWProxy {
     bool isPastHard,
     bool isPastFast,
     List<SatelliteComponent> satellites,
+    bool triggerStory,
   });
 }
 
@@ -123,6 +126,9 @@ class _$WaveStateCWProxyImpl implements _$WaveStateCWProxy {
       call(satellites: satellites);
 
   @override
+  WaveState triggerStory(bool triggerStory) => call(triggerStory: triggerStory);
+
+  @override
 
   /// Creates a new instance with the provided field values.
   /// Passing `null` to a nullable field nullifies it, while `null` for a non-nullable field is ignored. To update a single field use `WaveState(...).copyWith.fieldName(value)`.
@@ -147,6 +153,7 @@ class _$WaveStateCWProxyImpl implements _$WaveStateCWProxy {
     Object? isPastHard = const $CopyWithPlaceholder(),
     Object? isPastFast = const $CopyWithPlaceholder(),
     Object? satellites = const $CopyWithPlaceholder(),
+    Object? triggerStory = const $CopyWithPlaceholder(),
   }) {
     return WaveState(
       waveNumber:
@@ -223,6 +230,11 @@ class _$WaveStateCWProxyImpl implements _$WaveStateCWProxy {
               ? _value.satellites
               // ignore: cast_nullable_to_non_nullable
               : satellites as List<SatelliteComponent>,
+      triggerStory:
+          triggerStory == const $CopyWithPlaceholder() || triggerStory == null
+              ? _value.triggerStory
+              // ignore: cast_nullable_to_non_nullable
+              : triggerStory as bool,
     );
   }
 }
@@ -258,6 +270,7 @@ extension _$WaveStateEquatableAnnotations on WaveState {
         isPastTutorial,
         isPastHard,
         isPastFast,
+        triggerStory,
         waveNumber,
         stepUpHealth,
         stepUpSpeed,

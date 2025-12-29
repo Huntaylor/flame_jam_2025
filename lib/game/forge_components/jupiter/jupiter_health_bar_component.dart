@@ -45,7 +45,7 @@ class JupiterHealthBarComponent extends PositionComponent
 
   @override
   void update(double dt) {
-    if (!game.isGameStarted || game.gameState == GameState.end) {
+    if (game.gameBloc.state.isNotStart) {
       orbitTextComponent.text = '';
     } else {
       orbitTextComponent.text = 'Orbit Capacity';
@@ -55,7 +55,7 @@ class JupiterHealthBarComponent extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    if (!game.isGameStarted || game.gameState == GameState.end) {
+    if (game.gameBloc.state.isNotStart) {
       return;
     }
     double count = currentHealth - game.orbitingPower;

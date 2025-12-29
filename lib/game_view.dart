@@ -1,5 +1,6 @@
 import 'package:app_ui/app_ui.dart';
 import 'package:flame/game.dart';
+import 'package:flame_jam_2025/game/blocs/game/game_bloc.dart';
 import 'package:flame_jam_2025/game/blocs/wave/wave_bloc.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flame_jam_2025/overlays/game_over.dart';
@@ -24,7 +25,14 @@ class MyGame extends StatelessWidget {
     }
 
     return MultiBlocProvider(
-      providers: [BlocProvider<WaveBloc>(create: (_) => WaveBloc())],
+      providers: [
+        BlocProvider<WaveBloc>(
+          create: (_) => WaveBloc(),
+        ),
+        BlocProvider<GameBloc>(
+          create: (_) => GameBloc(),
+        ),
+      ],
       child: Material(
         child: GameView(
           isPlaying: isPlaying,
@@ -59,6 +67,7 @@ class _GameViewState extends State<GameView> {
           gameFactory: () => SatellitesGame(
             isPlaying: widget.isPlaying ?? true,
             waveBloc: context.read<WaveBloc>(),
+            gameBloc: context.read<GameBloc>(),
           ),
         ),
       ),

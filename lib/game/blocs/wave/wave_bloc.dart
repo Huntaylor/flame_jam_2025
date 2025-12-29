@@ -18,10 +18,12 @@ class WaveBloc extends Bloc<WaveEvent, WaveState> {
     on<WaveEnded>(_endWave);
     on<WaveStarted>(_startWave);
     on<WaveInProgress>(_progressWave);
+    on<WaveStoryProgress>(_storyProgressWave);
+    on<WaveStoryEnd>(_storyEndWave);
   }
 
   Future<void> _endWave(WaveEnded event, Emitter<WaveState> emit) async {
-    _log.info('$WaveEnded is emitted');
+    _log.info('$event is emitted');
 
     emit(state.copyWith(status: WaveStatus.end));
 
@@ -29,7 +31,7 @@ class WaveBloc extends Bloc<WaveEvent, WaveState> {
   }
 
   Future<void> _startWave(WaveStarted event, Emitter<WaveState> emit) async {
-    _log.info('$WaveStarted is emitted');
+    _log.info('$event is emitted');
 
     final pendingSpawn = await _generateWaveEnemies(emit);
 
@@ -38,9 +40,23 @@ class WaveBloc extends Bloc<WaveEvent, WaveState> {
 
   Future<void> _progressWave(
       WaveInProgress event, Emitter<WaveState> emit) async {
-    _log.info('$WaveInProgress is emitted');
+    _log.info('$event is emitted');
 
     emit(state.copyWith(status: WaveStatus.inProgress));
+  }
+
+  Future<void> _storyProgressWave(
+      WaveStoryProgress event, Emitter<WaveState> emit) async {
+    _log.info('$event is emitted');
+
+    emit(state.copyWith(triggerStory: true));
+  }
+
+  Future<void> _storyEndWave(
+      WaveStoryEnd event, Emitter<WaveState> emit) async {
+    _log.info('$event is emitted');
+
+    emit(state.copyWith(triggerStory: false));
   }
 
   Future<void> _incrementWave(Emitter<WaveState> emit) async {
@@ -134,7 +150,6 @@ class WaveBloc extends Bloc<WaveEvent, WaveState> {
 
   Map<SatelliteDifficulty, double> _getEnemyProbabilities() {
     Map<SatelliteDifficulty, double> probabilities = {};
-
     for (var type in state.difficultyList) {
       double? probability;
       switch (type) {

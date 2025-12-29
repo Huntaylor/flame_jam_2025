@@ -10,6 +10,7 @@ import 'package:flame/parallax.dart';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_bloc/flame_bloc.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
+import 'package:flame_jam_2025/game/blocs/game/game_bloc.dart';
 import 'package:flame_jam_2025/game/blocs/wave/wave_bloc.dart';
 import 'package:flame_jam_2025/game/components/audio_component.dart';
 import 'package:flame_jam_2025/game/components/mouse_render_component.dart';
@@ -28,11 +29,10 @@ import 'package:flame_jam_2025/game/managers/wave_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
-enum GameState { mainMenu, start, end, victory }
-
 class SatellitesGame extends Forge2DGame
     with TapCallbacks, MouseMovementDetector {
-  SatellitesGame({required this.isPlaying, required this.waveBloc})
+  SatellitesGame(
+      {required this.isPlaying, required this.waveBloc, required this.gameBloc})
       : super(gravity: Vector2(0, 0)) {
     jupiterSize = 9;
     earthSize = (jupiterSize / 11);
@@ -107,6 +107,7 @@ class SatellitesGame extends Forge2DGame
   bool isPlaying;
 
   final WaveBloc waveBloc;
+  final GameBloc gameBloc;
 
   String waveText = '';
   String satellitesLeftText = '';
@@ -115,8 +116,6 @@ class SatellitesGame extends Forge2DGame
 
   late MouseRenderComponent mouseRenderComponent;
 
-  GameState gameState = GameState.mainMenu;
-
   Vector2 randomVector2() => (-Vector2.random(rnd) - Vector2.random(rnd)) * 100;
   late ui.Image? spriteImage;
 
@@ -124,19 +123,6 @@ class SatellitesGame extends Forge2DGame
     ParallaxImageData('parallax/nebulawetstars.png'),
     ParallaxImageData('parallax/nebuladrystars.png'),
     ParallaxImageData('parallax/nebula2.png'),
-  ];
-
-  List<Vector2> startingPoints = [
-    Vector2(136.0, 55.0),
-    Vector2(170.0, 55.0),
-    Vector2(175.0, 67.0),
-    Vector2(174.0, 81.0),
-    Vector2(170.0, 93.0),
-    Vector2(158.0, 98.0),
-    Vector2(140.0, 97.0),
-    Vector2(129.0, 89.0),
-    Vector2(124.0, 75.0),
-    Vector2(128.0, 58.0),
   ];
 
   double fixedDeltaTime = 1 / 60;
@@ -185,7 +171,9 @@ class SatellitesGame extends Forge2DGame
       onPressed: () {
         waveBloc.add(WaveStarted());
 
-        return gameState = GameState.start;
+        gameBloc.add(GameStarted());
+
+        // return gameState = LocalGameState.start;
       },
     );
 
@@ -332,6 +320,13 @@ class SatellitesGame extends Forge2DGame
               waveManager,
             ],
           ),
+          FlameBlocProvider<GameBloc, GameState>.value(
+            value: gameBloc,
+            children: [
+              camera,
+              waveManager,
+            ],
+          ),
         ],
       ),
     );
@@ -355,8 +350,8 @@ class SatellitesGame extends Forge2DGame
 
   @override
   void update(double dt) {
-    if (gameState != GameState.end) {
-      if (gameState != GameState.mainMenu && !isGameStarted) {
+    if (gameBloc.state.isNotGameOver) {
+      if (gameBloc.state.isNotMainMenu && !isGameStarted) {
         if (muteTextComponent.text.isEmpty) {
           muteTextComponent.text = '-Mute-';
         }
@@ -367,7 +362,6 @@ class SatellitesGame extends Forge2DGame
         removeAll([playButton, muteButton]);
 
         isGameStarted = true;
-        storyComponent.startStory();
       }
       if (orbitingSatellites.length > currentLength) {
         // for (var satellite in orbitingSatellites) {
@@ -384,8 +378,8 @@ class SatellitesGame extends Forge2DGame
             orbitingPower = orbitingPower + 1;
           // }
         }
-        if (orbitingPower >= totalHealth && gameState != GameState.end) {
-          gameState = GameState.end;
+        if (orbitingPower >= totalHealth && gameBloc.state.isNotGameOver) {
+          gameBloc.add(GameLost());
           overlays.add('Game Over');
           if (mouseRenderComponent.parent != null &&
               mouseRenderComponent.parent!.isMounted) {
@@ -393,7 +387,7 @@ class SatellitesGame extends Forge2DGame
           }
         }
         if (earthComponent.isDestroyed) {
-          gameState = GameState.end;
+          gameBloc.add(GameLost());
           overlays.add('Victory');
           if (mouseRenderComponent.parent != null &&
               mouseRenderComponent.parent!.isMounted) {
@@ -435,7 +429,7 @@ class SatellitesGame extends Forge2DGame
 
   @override
   Future<void> onTapDown(TapDownEvent event) async {
-    if (gameState != GameState.mainMenu) {
+    if (gameBloc.state.isNotMainMenu) {
       super.onTapDown(event);
       if (asteroids.isNotEmpty && asteroids.any((e) => e.isOrbiting)) {
         targetPosition.setFrom(

@@ -58,7 +58,6 @@ class VictoryOverlay extends StatelessWidget {
               ),
               ElevatedButton(
                 onPressed: () {
-                  game.gameState == GameState.mainMenu;
                   Navigator.of(context).pushReplacementNamed('NewGame');
                   game.overlays.remove('Victory');
                 },
@@ -66,7 +65,7 @@ class VictoryOverlay extends StatelessWidget {
                   backgroundColor: Colors.grey,
                 ),
                 child: const Text(
-                  'Play Again',
+                  'Main Menu',
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.black,
