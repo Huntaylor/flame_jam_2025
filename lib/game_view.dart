@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:app_ui/app_ui.dart';
 import 'package:flame/game.dart';
 import 'package:flame_jam_2025/game/blocs/game/game_bloc.dart';
@@ -65,6 +67,8 @@ class _GameViewState extends State<GameView> {
             'Pause Menu': (_, game) => PauseMenu(game: game),
           },
           gameFactory: () => SatellitesGame(
+            isNotMobile: (!Platform.isAndroid && !Platform.isIOS),
+            isAndroidOriOS: (Platform.isAndroid || Platform.isIOS),
             isPlaying: widget.isPlaying ?? true,
             waveBloc: context.read<WaveBloc>(),
             gameBloc: context.read<GameBloc>(),

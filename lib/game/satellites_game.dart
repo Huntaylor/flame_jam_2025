@@ -6,6 +6,7 @@ import 'package:app_ui/app_ui.dart';
 import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
+import 'package:flame/flame.dart';
 import 'package:flame/parallax.dart';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_bloc/flame_bloc.dart';
@@ -30,21 +31,27 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
 class SatellitesGame extends Forge2DGame
-    with TapCallbacks, MouseMovementDetector {
+    with TapCallbacks, MouseMovementDetector, DragCallbacks {
   SatellitesGame(
-      {required this.isPlaying, required this.waveBloc, required this.gameBloc})
+      {required this.isPlaying,
+      required this.isAndroidOriOS,
+      required this.isNotMobile,
+      required this.waveBloc,
+      required this.gameBloc})
       : super(gravity: Vector2(0, 0)) {
     jupiterSize = 9;
     earthSize = (jupiterSize / 11);
     earthPosition = Vector2.all(15);
     jupiterPosition = Vector2(150.0, 75.0);
-    asteroidPosition = Vector2(jupiterPosition.x - 50, jupiterPosition.y + 50);
     firingPosition = Vector2(114, 59);
     asteroidAngle = Vector2(5, -20);
   }
   static final Logger _log = Logger('Satellite Game');
 
   bool playSounds = true;
+
+  final bool isAndroidOriOS;
+  final bool isNotMobile;
 
   final double smallDamage = 25;
   final double mediumDamage = 50;
@@ -57,7 +64,6 @@ class SatellitesGame extends Forge2DGame
 
   late Vector2 jupiterPosition;
   late Vector2 earthPosition;
-  late Vector2 asteroidPosition;
   late Vector2 firingPosition;
   late Vector2 asteroidAngle;
 
@@ -113,6 +119,7 @@ class SatellitesGame extends Forge2DGame
   String satellitesLeftText = '';
 
   Vector2? lineSegment;
+  Vector2 dragEndPosition = Vector2.zero();
 
   late MouseRenderComponent mouseRenderComponent;
 
@@ -139,6 +146,9 @@ class SatellitesGame extends Forge2DGame
 
   @override
   FutureOr<void> onLoad() async {
+    Flame.device.setLandscapeLeftOnly();
+    Flame.device.fullScreen();
+
     audioComponent = AudioComponent();
     storyComponent = StoryComponent(
       position: Vector2(50, 200),
@@ -160,7 +170,8 @@ class SatellitesGame extends Forge2DGame
     jupiterImage = await images.load('planet08.png');
 
     playButton = SatelliteHudButton(
-      position: Vector2(50, 450),
+      position:
+          Vector2(camera.viewport.size.x / 20, camera.viewport.size.y / 2.5),
       button: TextComponent(
         text: '-Launch satellite-',
         textRenderer: TextPaint(
@@ -170,15 +181,13 @@ class SatellitesGame extends Forge2DGame
       ),
       onPressed: () {
         waveBloc.add(WaveStarted());
-
         gameBloc.add(GameStarted());
-
-        // return gameState = LocalGameState.start;
       },
     );
 
     muteButton = SatelliteHudButton(
-      position: Vector2(50, 500),
+      position:
+          Vector2(camera.viewport.size.x / 20, camera.viewport.size.y / 2),
       button: TextComponent(
         text: '-Mute-',
         textRenderer: TextPaint(
@@ -403,22 +412,7 @@ class SatellitesGame extends Forge2DGame
 
   void setUpWaves() {
     asteroidSpawnManager = AsteroidSpawnManager();
-
-    /*   waveManager = WaveManager(
-      impulseTargets: [
-        Vector2(158.0, 40.0),
-        Vector2(155.0, 45.0),
-        Vector2(156.0, 50.0),
-        Vector2(155.0, 55.0),
-        Vector2(154.0, 60.0),
-        Vector2(145.0, 90.0),
-        Vector2(145.0, 95.0),
-        Vector2(140.0, 99.0),
-        Vector2(140.0, 100.0),
-        Vector2(130.0, 100.0),
-      ],
-    ); */
-    world.addAll([/* waveManager, */ asteroidSpawnManager]);
+    world.add(asteroidSpawnManager);
   }
 
   @override
@@ -428,34 +422,82 @@ class SatellitesGame extends Forge2DGame
   }
 
   @override
-  Future<void> onTapDown(TapDownEvent event) async {
-    if (gameBloc.state.isNotMainMenu) {
-      super.onTapDown(event);
+  void onDragUpdate(DragUpdateEvent event) {
+    if (isAndroidOriOS) {
+      lineSegment = camera.viewport.globalToLocal(event.localEndPosition);
+      dragEndPosition = camera.globalToLocal(event.localEndPosition);
+    }
+    super.onDragUpdate(event);
+  }
+
+  @override
+  void onDragEnd(DragEndEvent event) async {
+    if (gameBloc.state.isNotMainMenu && isAndroidOriOS) {
+      super.onDragEnd(event);
       if (asteroids.isNotEmpty && asteroids.any((e) => e.isOrbiting)) {
-        targetPosition.setFrom(
-          camera.globalToLocal(event.devicePosition),
-        );
+        await _setTarget(dragEndPosition);
+
         final asteroid = asteroids.firstWhere((e) => e.isOrbiting);
-        try {
-          final newAsteroid = AsteroidComponent(
-            speedScaling: asteroid.speedScaling,
-            startPosition: Vector2.zero(),
-            startingDamage: asteroid.startingDamage,
-            newPosition: asteroid.position,
-            sizeScaling: asteroid.sizeScaling,
-            priority: 3,
-          );
-          newAsteroid.state = AsteroidState.firing;
-          asteroids.removeWhere((e) => e == asteroid);
-          if (asteroid.parent != null && asteroid.parent!.isMounted) {
-            world.remove(asteroid);
-          }
-          world.add(newAsteroid);
-        } catch (e) {
-          _log.severe(
-              'Satellite game -- onTapDown Asteroid Creation Exception', e);
-        }
+
+        await _sendAsteroid(asteroid);
       }
     }
+  }
+
+  @override
+  Future<void> onTapDown(TapDownEvent event) async {
+    if (gameBloc.state.isNotMainMenu && isNotMobile) {
+      super.onTapDown(event);
+      if (asteroids.isNotEmpty && asteroids.any((e) => e.isOrbiting)) {
+        await _setTarget(camera.globalToLocal(event.devicePosition));
+
+        final asteroid = asteroids.firstWhere((e) => e.isOrbiting);
+
+        await _sendAsteroid(asteroid);
+      }
+    }
+  }
+
+  @override
+  void onTapUp(TapUpEvent event) async {
+    if (gameBloc.state.isNotMainMenu && isAndroidOriOS) {
+      super.onTapUp(event);
+
+      if (asteroids.isNotEmpty && asteroids.any((e) => e.isOrbiting)) {
+        lineSegment = camera.viewport.globalToLocal(event.devicePosition);
+        await _setTarget(camera.globalToLocal(event.devicePosition));
+
+        final asteroid = asteroids.firstWhere((e) => e.isOrbiting);
+
+        await _sendAsteroid(asteroid);
+      }
+    }
+  }
+
+  Future<void> _sendAsteroid(AsteroidComponent asteroid) async {
+    try {
+      final newAsteroid = AsteroidComponent(
+        speedScaling: asteroid.speedScaling,
+        startPosition: Vector2.zero(),
+        startingDamage: asteroid.startingDamage,
+        newPosition: asteroid.position,
+        sizeScaling: asteroid.sizeScaling,
+        priority: 3,
+      );
+      newAsteroid.state = AsteroidState.firing;
+      asteroids.removeWhere((e) => e == asteroid);
+      if (asteroid.parent != null && asteroid.parent!.isMounted) {
+        world.remove(asteroid);
+      }
+      world.add(newAsteroid);
+    } catch (e) {
+      _log.severe('Satellite game -- onTapDown Asteroid Creation Exception', e);
+    }
+  }
+
+  Future<void> _setTarget(Vector2 target) async {
+    targetPosition.setFrom(
+      target,
+    );
   }
 }
