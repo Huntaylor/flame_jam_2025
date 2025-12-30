@@ -66,7 +66,7 @@ class StoryComponent extends PositionComponent
       repeat: false,
       onTick: () {
         isFinished = true;
-        if (game.earthComponent.isAtWar) isWarTriggered = true;
+        if (bloc.state.isAtWar) isWarTriggered = true;
         bloc.add(WaveStoryEnd());
         game.waveManager.spawnTimer.start();
         removeStory();
@@ -127,7 +127,7 @@ class StoryComponent extends PositionComponent
 
   @override
   void update(double dt) {
-    if (game.gameBloc.state.isNotGameOver || !game.earthComponent.isDestroyed) {
+    if (game.gameBloc.state.isNotGameOver) {
       if (readingTimer.isRunning()) {
         readingTimer.update(dt);
       }
@@ -136,8 +136,8 @@ class StoryComponent extends PositionComponent
   }
 
   Future<String> updateText() async {
-    final isEarthAtWar = game.earthComponent.isAtWar;
-    final isEarthPeaceful = game.earthComponent.isPeaceful;
+    final isEarthAtWar = bloc.state.isAtWar;
+    final isEarthPeaceful = !bloc.state.isAtWar;
     _log.info('Update Text');
 
 //?game.waveManager.waveNumber will be the wave that was just completed

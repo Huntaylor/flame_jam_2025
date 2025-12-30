@@ -20,6 +20,8 @@ class WaveBloc extends Bloc<WaveEvent, WaveState> {
     on<WaveInProgress>(_progressWave);
     on<WaveStoryProgress>(_storyProgressWave);
     on<WaveStoryEnd>(_storyEndWave);
+    on<EarthWarStarted>(_startEarthWar);
+    on<EarthWarEnded>(_endEarthWar);
   }
 
   Future<void> _endWave(WaveEnded event, Emitter<WaveState> emit) async {
@@ -57,6 +59,20 @@ class WaveBloc extends Bloc<WaveEvent, WaveState> {
     _log.info('$event is emitted');
 
     emit(state.copyWith(triggerStory: false));
+  }
+
+  Future<void> _startEarthWar(
+      EarthWarStarted event, Emitter<WaveState> emit) async {
+    _log.info('$event is emitted');
+
+    emit(state.copyWith(isAtWar: true));
+  }
+
+  Future<void> _endEarthWar(
+      EarthWarEnded event, Emitter<WaveState> emit) async {
+    _log.info('$event is emitted');
+
+    emit(state.copyWith(isEarthDestroyed: true));
   }
 
   Future<void> _incrementWave(Emitter<WaveState> emit) async {

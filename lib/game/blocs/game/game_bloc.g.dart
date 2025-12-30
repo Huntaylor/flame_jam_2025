@@ -9,6 +9,8 @@ part of 'game_bloc.dart';
 abstract class _$GameStateCWProxy {
   GameState gameStatus(GameStatus gameStatus);
 
+  GameState gameOverType(GameOverType gameOverType);
+
   /// Creates a new instance with the provided field values.
   /// Passing `null` to a nullable field nullifies it, while `null` for a non-nullable field is ignored. To update a single field use `GameState(...).copyWith.fieldName(value)`.
   ///
@@ -18,6 +20,7 @@ abstract class _$GameStateCWProxy {
   /// ```
   GameState call({
     GameStatus gameStatus,
+    GameOverType gameOverType,
   });
 }
 
@@ -32,6 +35,10 @@ class _$GameStateCWProxyImpl implements _$GameStateCWProxy {
   GameState gameStatus(GameStatus gameStatus) => call(gameStatus: gameStatus);
 
   @override
+  GameState gameOverType(GameOverType gameOverType) =>
+      call(gameOverType: gameOverType);
+
+  @override
 
   /// Creates a new instance with the provided field values.
   /// Passing `null` to a nullable field nullifies it, while `null` for a non-nullable field is ignored. To update a single field use `GameState(...).copyWith.fieldName(value)`.
@@ -42,6 +49,7 @@ class _$GameStateCWProxyImpl implements _$GameStateCWProxy {
   /// ```
   GameState call({
     Object? gameStatus = const $CopyWithPlaceholder(),
+    Object? gameOverType = const $CopyWithPlaceholder(),
   }) {
     return GameState(
       gameStatus:
@@ -49,6 +57,11 @@ class _$GameStateCWProxyImpl implements _$GameStateCWProxy {
               ? _value.gameStatus
               // ignore: cast_nullable_to_non_nullable
               : gameStatus as GameStatus,
+      gameOverType:
+          gameOverType == const $CopyWithPlaceholder() || gameOverType == null
+              ? _value.gameOverType
+              // ignore: cast_nullable_to_non_nullable
+              : gameOverType as GameOverType,
     );
   }
 }
@@ -69,5 +82,5 @@ extension _$GameEventEquatableAnnotations on GameEvent {
 }
 
 extension _$GameStateEquatableAnnotations on GameState {
-  List<Object?> get _$props => [gameStatus];
+  List<Object?> get _$props => [gameStatus, gameOverType];
 }

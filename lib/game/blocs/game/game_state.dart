@@ -2,13 +2,18 @@ part of 'game_bloc.dart';
 
 enum GameStatus { mainMenu, start, end }
 
+enum GameOverType { initial, earthDestroyed, satelliteOverwhelm }
+
 @CopyWith()
 class GameState extends Equatable {
-  const GameState({required this.gameStatus});
+  const GameState({required this.gameStatus, required this.gameOverType});
 
-  const GameState.initial() : gameStatus = GameStatus.mainMenu;
+  const GameState.initial()
+      : gameStatus = GameStatus.mainMenu,
+        gameOverType = GameOverType.initial;
 
   final GameStatus gameStatus;
+  final GameOverType gameOverType;
 
   bool get isGameOver => gameStatus == GameStatus.end;
   bool get isMainMenu => gameStatus == GameStatus.mainMenu;

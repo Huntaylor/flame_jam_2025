@@ -46,6 +46,7 @@ class SatellitesGame extends Forge2DGame
     firingPosition = Vector2(114, 59);
     asteroidAngle = Vector2(5, -20);
   }
+
   static final Logger _log = Logger('Satellite Game');
 
   bool playSounds = true;
@@ -237,7 +238,7 @@ class SatellitesGame extends Forge2DGame
     final viewfinder = Viewfinder();
 
     jupiterComponent = JupiterComponent(
-      priority: 1, /* spriteImage: jupiterImage */
+      priority: 1,
     );
 
     jupiterGravityRepellentComponent = JupiterGravityRepellentComponent();
@@ -247,7 +248,6 @@ class SatellitesGame extends Forge2DGame
       anchor: Anchor.center,
     );
 
-    earthComponent = EarthComponent();
     setUpWaves();
 
     earthGravityComponent = EarthGravityComponent();
@@ -295,13 +295,14 @@ class SatellitesGame extends Forge2DGame
         mouseRenderComponent,
       ],
     );
+    earthComponent = EarthComponent();
 
     world.addAll([
       jupiterComponent,
       jupiterGravityComponent,
-      earthComponent,
       jupiterGravityRepellentComponent,
       earthGravityComponent,
+      earthComponent
     ]);
 
     waveManager = WaveManager(
@@ -323,19 +324,17 @@ class SatellitesGame extends Forge2DGame
       FlameMultiBlocProvider(
         providers: [
           FlameBlocProvider<WaveBloc, WaveState>.value(
-            value: waveBloc,
-            children: [
-              camera,
-              waveManager,
-            ],
-          ),
+              value: waveBloc,
+              children: [
+                camera,
+                waveManager,
+              ]),
           FlameBlocProvider<GameBloc, GameState>.value(
-            value: gameBloc,
-            children: [
-              camera,
-              waveManager,
-            ],
-          ),
+              value: gameBloc,
+              children: [
+                camera,
+                waveManager,
+              ]),
         ],
       ),
     );
@@ -373,7 +372,6 @@ class SatellitesGame extends Forge2DGame
         isGameStarted = true;
       }
       if (orbitingSatellites.length > currentLength) {
-        // for (var satellite in orbitingSatellites) {
         switch (orbitingSatellites.last.difficulty) {
           case SatelliteDifficulty.easy:
             orbitingPower = orbitingPower + 2;
@@ -385,19 +383,15 @@ class SatellitesGame extends Forge2DGame
             orbitingPower = orbitingPower + 10;
           case SatelliteDifficulty.fast:
             orbitingPower = orbitingPower + 1;
-          // }
         }
         if (orbitingPower >= totalHealth && gameBloc.state.isNotGameOver) {
           gameBloc.add(GameLost());
-          overlays.add('Game Over');
           if (mouseRenderComponent.parent != null &&
               mouseRenderComponent.parent!.isMounted) {
             camera.viewport.remove(mouseRenderComponent);
           }
         }
-        if (earthComponent.isDestroyed) {
-          gameBloc.add(GameLost());
-          overlays.add('Victory');
+        if (earthComponent.currentHealth <= 0) {
           if (mouseRenderComponent.parent != null &&
               mouseRenderComponent.parent!.isMounted) {
             camera.viewport.remove(mouseRenderComponent);

@@ -25,10 +25,12 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
     this.sizeScaling,
     this.speedScaling,
     this.spriteImage,
+    this.canDamageEarth = false,
   });
   static final Logger _log = Logger('Asteroid Component');
   final double? sizeScaling;
   final double? speedScaling;
+  final bool canDamageEarth;
 
   final ui.Image? spriteImage;
 

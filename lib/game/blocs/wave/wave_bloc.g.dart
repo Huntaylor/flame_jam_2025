@@ -39,6 +39,8 @@ abstract class _$WaveStateCWProxy {
 
   WaveState triggerStory(bool triggerStory);
 
+  WaveState isEarthDestroyed(bool isEarthDestroyed);
+
   /// Creates a new instance with the provided field values.
   /// Passing `null` to a nullable field nullifies it, while `null` for a non-nullable field is ignored. To update a single field use `WaveState(...).copyWith.fieldName(value)`.
   ///
@@ -63,6 +65,7 @@ abstract class _$WaveStateCWProxy {
     bool isPastFast,
     List<SatelliteComponent> satellites,
     bool triggerStory,
+    bool isEarthDestroyed,
   });
 }
 
@@ -129,6 +132,10 @@ class _$WaveStateCWProxyImpl implements _$WaveStateCWProxy {
   WaveState triggerStory(bool triggerStory) => call(triggerStory: triggerStory);
 
   @override
+  WaveState isEarthDestroyed(bool isEarthDestroyed) =>
+      call(isEarthDestroyed: isEarthDestroyed);
+
+  @override
 
   /// Creates a new instance with the provided field values.
   /// Passing `null` to a nullable field nullifies it, while `null` for a non-nullable field is ignored. To update a single field use `WaveState(...).copyWith.fieldName(value)`.
@@ -154,6 +161,7 @@ class _$WaveStateCWProxyImpl implements _$WaveStateCWProxy {
     Object? isPastFast = const $CopyWithPlaceholder(),
     Object? satellites = const $CopyWithPlaceholder(),
     Object? triggerStory = const $CopyWithPlaceholder(),
+    Object? isEarthDestroyed = const $CopyWithPlaceholder(),
   }) {
     return WaveState(
       waveNumber:
@@ -235,6 +243,11 @@ class _$WaveStateCWProxyImpl implements _$WaveStateCWProxy {
               ? _value.triggerStory
               // ignore: cast_nullable_to_non_nullable
               : triggerStory as bool,
+      isEarthDestroyed: isEarthDestroyed == const $CopyWithPlaceholder() ||
+              isEarthDestroyed == null
+          ? _value.isEarthDestroyed
+          // ignore: cast_nullable_to_non_nullable
+          : isEarthDestroyed as bool,
     );
   }
 }
@@ -254,10 +267,6 @@ extension _$WaveEventEquatableAnnotations on WaveEvent {
   List<Object?> get _$props => [];
 }
 
-extension _$EarthWarStartedEquatableAnnotations on EarthWarStarted {
-  List<Object?> get _$props => [isAtWar];
-}
-
 extension _$WaveStateEquatableAnnotations on WaveState {
   List<Object?> get _$props => [
         status,
@@ -266,6 +275,7 @@ extension _$WaveStateEquatableAnnotations on WaveState {
         isBossRound,
         isProbsRefreshed,
         isAtWar,
+        isEarthDestroyed,
         isInitialDifficulty,
         isPastTutorial,
         isPastHard,

@@ -33,6 +33,7 @@ class WaveState extends Equatable {
     required this.isPastFast,
     required this.satellites,
     required this.triggerStory,
+    required this.isEarthDestroyed,
   });
 
   final WaveStatus status;
@@ -56,6 +57,7 @@ class WaveState extends Equatable {
   final bool isBossRound;
   final bool isProbsRefreshed;
   final bool isAtWar;
+  final bool isEarthDestroyed;
 
   final bool isInitialDifficulty;
   final bool isPastTutorial;
@@ -96,7 +98,8 @@ class WaveState extends Equatable {
         stepUpHealth = 1,
         satellites = [],
         pendingSpawn = <SatelliteDifficulty>[],
-        triggerStory = false;
+        triggerStory = false,
+        isEarthDestroyed = false;
 
   @override
   List<Object?> get props => _$props;

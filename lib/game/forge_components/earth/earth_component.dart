@@ -4,12 +4,12 @@ import 'dart:ui' as ui;
 import 'package:flame/components.dart';
 import 'package:flame/particles.dart' as parts;
 import 'package:flame_forge2d/flame_forge2d.dart';
+import 'package:flame_jam_2025/game/blocs/game/game_bloc.dart';
+import 'package:flame_jam_2025/game/blocs/wave/wave_bloc.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-
-enum EarthState { peaceful, war, destroyed }
 
 class EarthComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks {
@@ -18,17 +18,6 @@ class EarthComponent extends BodyComponent<SatellitesGame>
       : super(paint: Paint()..color = Colors.lightBlue);
 
   final rnd = Random();
-  EarthState? _earthState;
-
-  bool get isPeaceful => state == EarthState.peaceful;
-  bool get isAtWar => state == EarthState.war;
-  bool get isDestroyed => state == EarthState.destroyed;
-
-  EarthState get state => _earthState ?? EarthState.peaceful;
-
-  set state(EarthState state) {
-    _earthState = state;
-  }
 
   final healthBarPaint = Paint();
 
@@ -65,15 +54,6 @@ class EarthComponent extends BodyComponent<SatellitesGame>
   }
 
   @override
-  void update(double dt) {
-    if (isAtWar && currentHealth <= 0) {
-      state = EarthState.destroyed;
-      explodeEarth();
-    }
-    super.update(dt);
-  }
-
-  @override
   Body createBody() {
     final def = BodyDef(
       isAwake: true,
@@ -97,20 +77,19 @@ class EarthComponent extends BodyComponent<SatellitesGame>
 
   @override
   void beginContact(Object other, Contact contact) {
-    if (other is AsteroidComponent &&
-        other.isFiring &&
-        other.currentDamage > 250) {
-      state = EarthState.war;
+    if (other is AsteroidComponent && other.canDamageEarth) {
+      game.waveBloc.add(EarthWarStarted());
       if (!damageDealtByList.contains(other)) {
         currentHealth = currentHealth - other.currentDamage;
         if (currentHealth <= 0) {
+          game.gameBloc.add(GameWon());
+
           currentHealth = 0;
-          state = EarthState.destroyed;
+          explodeEarth();
         }
         damageDealtByList.add(other);
       }
     }
-    _log.info('Earth State: $state');
     super.beginContact(other, contact);
   }
 
@@ -126,7 +105,7 @@ class EarthComponent extends BodyComponent<SatellitesGame>
 
   @override
   void render(Canvas canvas) {
-    if (isAtWar) {
+    if (game.waveBloc.state.isAtWar) {
       canvas.save();
       healthBarPaint.color = Colors.white;
       canvas.drawRect(
@@ -148,6 +127,7 @@ class EarthComponent extends BodyComponent<SatellitesGame>
   }
 
   void explodeEarth() {
+    game.waveBloc.add(EarthWarEnded());
     game.audioComponent.onAsteroidDestoryed();
     final explosionParticle = ParticleSystemComponent(
       position: game.camera.localToGlobal(position),

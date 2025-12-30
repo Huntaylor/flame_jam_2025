@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 import 'package:flame_bloc/flame_bloc.dart';
+import 'package:flame_jam_2025/game/blocs/game/game_bloc.dart';
 import 'package:flame_jam_2025/game/blocs/wave/wave_bloc.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/forge_components/upgrades/upgrade_component.dart';
@@ -80,7 +81,7 @@ class WaveManager extends Component
   }
 
   @override
-  FutureOr<void> onLoad() {
+  FutureOr<void> onLoad() async {
     upgradeTimer = Timer(20,
         onTick: () => createUpgrade(), autoStart: false, repeat: true);
     waveTimer = Timer(
@@ -95,6 +96,20 @@ class WaveManager extends Component
       spawnSatellites();
     }, repeat: true, autoStart: false);
 
+    await add(
+      FlameBlocListener<GameBloc, GameState>(onNewState: (state) {
+        if (state.isGameOver) {
+          switch (state.gameOverType) {
+            case GameOverType.initial:
+              break;
+            case GameOverType.earthDestroyed:
+              game.overlays.add('Victory');
+            case GameOverType.satelliteOverwhelm:
+              game.overlays.add('Game Over');
+          }
+        }
+      }),
+    );
     return super.onLoad();
   }
 
@@ -175,7 +190,7 @@ class WaveManager extends Component
       difficulty: type,
       isBelow: index <= 4,
       stepUpSpeed: game.waveBloc.state.stepUpSpeed,
-      stepUpHealth: (game.earthComponent.isAtWar)
+      stepUpHealth: (bloc.state.isAtWar)
           ? game.waveBloc.state.stepUpHealth + 2
           : game.waveBloc.state.stepUpHealth,
     )..setImpulseTarget = impulseTargets[index];
