@@ -58,7 +58,7 @@ class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
     if (speedScale > spawnManager.maxSpeed) {
       spawnManager.speedScaling = spawnManager.maxSpeed;
       game.waveManager.upgradeTypeList
-          .removeWhere((e) => e == UpgradeType.speed);
+          .removeWhere((e) => e == LocalUpgradeType.speed);
     } else {
       spawnManager.speedScaling = spawnManager.speedScaling + 2;
     }
@@ -69,7 +69,7 @@ class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
     final newScaling = spawnManager.sizeScaling;
     if (newScaling > spawnManager.maxSize) {
       game.waveManager.upgradeTypeList
-          .removeWhere((e) => e == UpgradeType.size);
+          .removeWhere((e) => e == LocalUpgradeType.size);
       spawnManager.sizeScaling = spawnManager.maxSize;
     } else {
       spawnManager.sizeScaling = spawnManager.sizeScaling + .02;
@@ -87,28 +87,28 @@ class AsteroidControllerBehavior extends Behavior<AsteroidComponent>
   void gainedCountUpgrade() {
     if (spawnManager.asterCountUpgrade == spawnManager.maxAsteroids) {
       game.waveManager.upgradeTypeList
-          .removeWhere((e) => e == UpgradeType.quantity);
+          .removeWhere((e) => e == LocalUpgradeType.quantity);
     } else {
       spawnManager.asterCountUpgrade = spawnManager.asterCountUpgrade + 1;
     }
     _log.info('Count Increase: ${spawnManager.asterCountUpgrade}');
   }
 
-  void gainedUpgrade(UpgradeType type) {
-    switch (type) {
-      case UpgradeType.speed:
-        gainedSpeedUpgrade();
+  // void gainedUpgrade(LocalUpgradeType type) {
+  //   switch (type) {
+  //     case LocalUpgradeType.speed:
+  //       gainedSpeedUpgrade();
 
-      case UpgradeType.size:
-        gainedSizeUpgrade();
+  //     case LocalUpgradeType.size:
+  //       gainedSizeUpgrade();
 
-      case UpgradeType.damage:
-        gainedDamageUpgrade();
+  //     case LocalUpgradeType.damage:
+  //       gainedDamageUpgrade();
 
-      case UpgradeType.quantity:
-        gainedCountUpgrade();
-    }
-  }
+  //     case LocalUpgradeType.quantity:
+  //       gainedCountUpgrade();
+  //   }
+  // }
 
   void explodeAsteroid(Vector2 position, AsteroidComponent _component) {
     game.audioComponent.onAsteroidDestoryed();

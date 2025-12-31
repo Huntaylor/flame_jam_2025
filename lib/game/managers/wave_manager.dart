@@ -28,11 +28,11 @@ class WaveManager extends Component
 
   late UpgradeComponent upgradeComponent;
 
-  List<UpgradeType> upgradeTypeList = [
-    UpgradeType.damage,
-    UpgradeType.quantity,
-    UpgradeType.size,
-    UpgradeType.speed,
+  List<LocalUpgradeType> upgradeTypeList = [
+    LocalUpgradeType.damage,
+    LocalUpgradeType.quantity,
+    LocalUpgradeType.size,
+    LocalUpgradeType.speed,
   ];
 
   List<SatelliteCountry> originCountries = [
@@ -98,7 +98,9 @@ class WaveManager extends Component
 
     await add(
       FlameBlocListener<GameBloc, GameState>(onNewState: (state) {
-        if (state.isGameOver) {
+        if (state.isStart) {
+          game.setUpHudText();
+        } else if (state.isGameOver) {
           switch (state.gameOverType) {
             case GameOverType.initial:
               break;

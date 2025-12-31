@@ -345,7 +345,7 @@ class StoryComponent extends PositionComponent
   ];
   List<String> notBreaking = [
     'Breaking News! Scientists find more information about Jupiter, exciting the rest of the world to continue sending satellites!',
-    'Breaking News! Scientists are baffled at the simplicity of getting a satellite to Jupiter. Investors  are throwing their money at science to make a profit, allowing for more satellites to be built!',
+    'Breaking News! Scientists are baffled at the simplicity of getting a satellite to Jupiter. Investors are throwing their money at science to make a profit, allowing for more satellites to be built!',
     'Breaking News! The science foundations in all countries has an overflow of donations allowing for durable satellites! Critics claim the amount of satellites currently orbiting Jupiter could be too much for the planet to handle.',
   ];
 }

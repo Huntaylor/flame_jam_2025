@@ -69,7 +69,8 @@ class GameOver extends StatelessWidget {
               ),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.of(context).pushReplacementNamed('NewGame');
+                  Navigator.of(context).pushReplacementNamed('NewGame',
+                      arguments: game.isPlaying);
                   game.overlays.remove('Game Over');
                 },
                 style: ElevatedButton.styleFrom(

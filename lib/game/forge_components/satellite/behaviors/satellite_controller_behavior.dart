@@ -6,6 +6,7 @@ import 'package:flame/extensions.dart';
 import 'package:flame/particles.dart' as parts;
 import 'package:flame_behaviors/flame_behaviors.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
+import 'package:flame_jam_2025/game/blocs/upgrades/upgrades_bloc.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/behaviors/satellite_shapes.dart';
 import 'package:flame_jam_2025/game/forge_components/satellite/satellite_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
@@ -57,6 +58,9 @@ class SatelliteControllerBehavior extends Behavior<SatelliteComponent>
 
   void destroySatellite(bool byPlayer) {
     if (byPlayer && !game.destroyedSatellites.contains(parent)) {
+      game.upgradesBloc
+          .add(UpgradePointsGained(satelliteDifficulty: parent.difficulty));
+
       game.destroyedSatellites.add(parent);
     }
     parent.state = SatelliteState.destroyed;

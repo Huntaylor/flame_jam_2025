@@ -3,11 +3,13 @@ import 'dart:io';
 import 'package:app_ui/app_ui.dart';
 import 'package:flame/game.dart';
 import 'package:flame_jam_2025/game/blocs/game/game_bloc.dart';
+import 'package:flame_jam_2025/game/blocs/upgrades/upgrades_bloc.dart';
 import 'package:flame_jam_2025/game/blocs/wave/wave_bloc.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flame_jam_2025/overlays/game_over.dart';
 import 'package:flame_jam_2025/overlays/pause_menu.dart';
-import 'package:flame_jam_2025/overlays/victory.dart';
+import 'package:flame_jam_2025/overlays/upgrade_overlay.dart';
+import 'package:flame_jam_2025/overlays/victory_overlay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -33,6 +35,9 @@ class MyGame extends StatelessWidget {
         ),
         BlocProvider<GameBloc>(
           create: (_) => GameBloc(),
+        ),
+        BlocProvider<UpgradesBloc>(
+          create: (_) => UpgradesBloc(),
         ),
       ],
       child: Material(
@@ -65,6 +70,7 @@ class _GameViewState extends State<GameView> {
             'Game Over': (_, game) => GameOver(game: game),
             'Victory': (_, game) => VictoryOverlay(game: game),
             'Pause Menu': (_, game) => PauseMenu(game: game),
+            'Upgrades': (_, game) => UpgradeOverlay(game: game),
           },
           gameFactory: () => SatellitesGame(
             isNotMobile: (!Platform.isAndroid && !Platform.isIOS),
@@ -72,6 +78,7 @@ class _GameViewState extends State<GameView> {
             isPlaying: widget.isPlaying ?? true,
             waveBloc: context.read<WaveBloc>(),
             gameBloc: context.read<GameBloc>(),
+            upgradesBloc: context.read<UpgradesBloc>(),
           ),
         ),
       ),

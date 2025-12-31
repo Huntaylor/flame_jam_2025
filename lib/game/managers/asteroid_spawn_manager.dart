@@ -2,18 +2,27 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flame/components.dart';
+import 'package:flame_bloc/flame_bloc.dart';
+import 'package:flame_jam_2025/game/blocs/upgrades/upgrades_bloc.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
+import 'package:logging/logging.dart';
 
 enum OrbitTarget { top, bottom, right }
 
 class AsteroidSpawnManager extends Component
-    with HasGameReference<SatellitesGame> {
+    with
+        HasGameReference<SatellitesGame>,
+        FlameBlocListenable<UpgradesBloc, UpgradesState> {
   AsteroidSpawnManager();
+
+  static final Logger _log = Logger('Asteroid Spawn Manager');
 
   double sizeScaling = 0;
   double damageScaling = 0;
   double speedScaling = 0;
+
+  bool canDamageEarth = false;
 
 // Upgrades
   final double maxSize = 1.5;
@@ -22,9 +31,9 @@ class AsteroidSpawnManager extends Component
 
   int currentMax = 10;
 
-  int currentAsteroids = 0;
+  final int startingMax = 10;
 
-  int currentWave = 1;
+  int currentAsteroids = 0;
 
   int asterCountUpgrade = 0;
 
@@ -68,6 +77,17 @@ class AsteroidSpawnManager extends Component
     Vector2(120.0, 100.0), //Bottom
     Vector2(190.0, 44.0), //Right
   ];
+
+  @override
+  void onNewState(UpgradesState state) {
+    damageScaling = (state.damageLevel * 15);
+    sizeScaling = (state.sizeLevel * 0.05);
+    speedScaling = (state.speedLevel * 2);
+    asterCountUpgrade = (state.quantityLevel * 2);
+    hasCalledNew = false;
+    needAsteroids();
+    super.onNewState(state);
+  }
 
   @override
   FutureOr<void> onLoad() async {
@@ -131,17 +151,18 @@ class AsteroidSpawnManager extends Component
   }
 
   void resetAsteroidNum() {
-    currentMax = currentMax + asterCountUpgrade;
+    currentMax = startingMax + asterCountUpgrade;
     if (currentMax > maxAsteroids) {
       currentMax = maxAsteroids;
     }
   }
 
   void createNewAsteroids() {
-    if (currentWave != game.waveManager.waveNumber) {
-      currentWave = game.waveManager.waveNumber;
-      resetAsteroidNum();
-    }
+    // if (currentWave != game.waveManager.waveNumber) {
+    // currentWave = game.waveManager.waveNumber;
+    resetAsteroidNum();
+    // }
+    _log.info('Creating New Asteroids: $currentMax');
     currentAsteroids = game.asteroids.length;
     if (currentAsteroids < currentMax) {
       final index = rnd.nextInt(3);
@@ -170,6 +191,7 @@ class AsteroidSpawnManager extends Component
               : topTargetLocations;
 
           return AsteroidComponent(
+            canDamageEarth: canDamageEarth,
             priority: isBehindJupiter ? 0 : 3,
             spriteImage: game.spriteImage,
             impulseDirection: impulseDirection(
@@ -184,6 +206,7 @@ class AsteroidSpawnManager extends Component
         },
       );
       if (!individualTimer.isRunning()) {
+        _log.info('Launching new Asteroids');
         individualTimer.start();
       }
     }

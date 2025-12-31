@@ -12,6 +12,7 @@ import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_bloc/flame_bloc.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_jam_2025/game/blocs/game/game_bloc.dart';
+import 'package:flame_jam_2025/game/blocs/upgrades/upgrades_bloc.dart';
 import 'package:flame_jam_2025/game/blocs/wave/wave_bloc.dart';
 import 'package:flame_jam_2025/game/components/audio_component.dart';
 import 'package:flame_jam_2025/game/components/mouse_render_component.dart';
@@ -37,7 +38,8 @@ class SatellitesGame extends Forge2DGame
       required this.isAndroidOriOS,
       required this.isNotMobile,
       required this.waveBloc,
-      required this.gameBloc})
+      required this.gameBloc,
+      required this.upgradesBloc})
       : super(gravity: Vector2(0, 0)) {
     jupiterSize = 9;
     earthSize = (jupiterSize / 11);
@@ -53,6 +55,9 @@ class SatellitesGame extends Forge2DGame
 
   final bool isAndroidOriOS;
   final bool isNotMobile;
+
+  final double gameWidth = 1920.0;
+  final double gameHeight = 1027.0;
 
   final double smallDamage = 25;
   final double mediumDamage = 50;
@@ -94,6 +99,7 @@ class SatellitesGame extends Forge2DGame
   late AsteroidSpawnManager asteroidSpawnManager;
 
   late TextComponent muteTextComponent;
+  late TextComponent upgradeTextComponent;
 
   late TextComponent waveTextComponent;
   late TextComponent satellitesLeftTextComponent;
@@ -103,18 +109,19 @@ class SatellitesGame extends Forge2DGame
   late AudioComponent audioComponent;
 
   late SatelliteHudButton inGameMuteButton;
+  late SatelliteHudButton inGameUpgradeButton;
 
   late SatelliteHudButton playButton;
   late SatelliteHudButton muteButton;
 
   final rnd = Random();
 
-  bool isGameStarted = false;
   bool hidHud = false;
   bool isPlaying;
 
   final WaveBloc waveBloc;
   final GameBloc gameBloc;
+  final UpgradesBloc upgradesBloc;
 
   String waveText = '';
   String satellitesLeftText = '';
@@ -150,82 +157,16 @@ class SatellitesGame extends Forge2DGame
     Flame.device.setLandscapeLeftOnly();
     Flame.device.fullScreen();
 
-    audioComponent = AudioComponent();
-    storyComponent = StoryComponent(
-      position: Vector2(50, 200),
-    );
-    await setUpAudio();
+    await _audioSetup();
 
-    final parallax = await loadParallaxComponent(
-      _imageNames,
-      baseVelocity: Vector2(20, 0),
-      velocityMultiplierDelta: Vector2(1.8, 1.0),
-      filterQuality: FilterQuality.none,
-    );
-
-    add(parallax);
+    await _parallaxSetup();
 
     await images.loadAllImages();
 
     spriteImage = await images.load('asteroid.png');
     jupiterImage = await images.load('planet08.png');
 
-    playButton = SatelliteHudButton(
-      position:
-          Vector2(camera.viewport.size.x / 20, camera.viewport.size.y / 2.5),
-      button: TextComponent(
-        text: '-Launch satellite-',
-        textRenderer: TextPaint(
-          style:
-              SatellitesTextStyle.titleLarge.copyWith(color: Colors.blueGrey),
-        ),
-      ),
-      onPressed: () {
-        waveBloc.add(WaveStarted());
-        gameBloc.add(GameStarted());
-      },
-    );
-
-    muteButton = SatelliteHudButton(
-      position:
-          Vector2(camera.viewport.size.x / 20, camera.viewport.size.y / 2),
-      button: TextComponent(
-        text: '-Mute-',
-        textRenderer: TextPaint(
-          style: SatellitesTextStyle.headlineSmall.copyWith(
-            color: Colors.red[400],
-          ),
-        ),
-      ),
-      onPressed: () {
-        isPlaying = !isPlaying;
-        _log.info('IsPlaying: $isPlaying');
-        updateSound();
-      },
-    );
-
-    muteTextComponent = TextComponent(
-      text: '',
-      textRenderer: TextPaint(
-        style: SatellitesTextStyle.headlineSmall.copyWith(
-          fontSize: 18,
-          color: Colors.red[400],
-        ),
-      ),
-    );
-
-    inGameMuteButton = SatelliteHudButton(
-      size: Vector2(115, 25),
-      position: Vector2(1920 - 115, 50),
-      button: muteTextComponent,
-      onPressed: () {
-        if (isGameStarted) {
-          isPlaying = !isPlaying;
-          _log.info('IsPlaying: $isPlaying');
-          updateSound();
-        }
-      },
-    );
+    _buttonSetup();
 
     mouseRenderComponent = MouseRenderComponent(priority: 5);
 
@@ -235,67 +176,13 @@ class SatellitesGame extends Forge2DGame
       muteButton,
     ]);
 
-    final viewfinder = Viewfinder();
+    _jupiterEarthSetup();
 
-    jupiterComponent = JupiterComponent(
-      priority: 1,
-    );
+    _setUpWaves();
 
-    jupiterGravityRepellentComponent = JupiterGravityRepellentComponent();
+    _waveTextSetup();
 
-    jupiterGravityComponent = JupiterGravityComponent();
-    jupiterSanityBarComponent = JupiterHealthBarComponent(
-      anchor: Anchor.center,
-    );
-
-    setUpWaves();
-
-    earthGravityComponent = EarthGravityComponent();
-
-    waveTextComponent = TextComponent(
-      anchor: Anchor.center,
-      text: waveText,
-      textRenderer: TextPaint(
-          style: SatellitesTextStyle.displayMedium
-              .copyWith(color: Colors.blueGrey[100])),
-    );
-    satellitesLeftTextComponent = TextComponent(
-      anchor: Anchor.center,
-      text: satellitesLeftText,
-      textRenderer: TextPaint(
-          style: SatellitesTextStyle.displayMedium
-              .copyWith(color: Colors.blueGrey[100])),
-    );
-
-    viewfinder
-      ..anchor = Anchor.topLeft
-      ..zoom = 10;
-    camera = CameraComponent.withFixedResolution(
-      width: 1920.0,
-      height: 1027.0,
-      world: world,
-      viewfinder: viewfinder,
-      hudComponents: [
-        FpsTextComponent(
-          position: Vector2.all(10),
-          textRenderer: TextPaint(
-              style: SatellitesTextStyle.titleMedium
-                  .copyWith(color: Colors.blueGrey[100])),
-        ),
-        waveTextComponent
-          ..position = Vector2(1920 / 2, waveTextComponent.height),
-        satellitesLeftTextComponent
-          ..position = Vector2(
-            1920 / 2,
-            waveTextComponent.height + waveTextComponent.height + 8,
-          ),
-        jupiterSanityBarComponent..position = Vector2(800, 25),
-        storyComponent,
-        inGameMuteButton,
-        mouseRenderComponent,
-      ],
-    );
-    earthComponent = EarthComponent();
+    _cameraSetup();
 
     world.addAll([
       jupiterComponent,
@@ -305,39 +192,7 @@ class SatellitesGame extends Forge2DGame
       earthComponent
     ]);
 
-    waveManager = WaveManager(
-      impulseTargets: [
-        Vector2(158.0, 40.0),
-        Vector2(155.0, 45.0),
-        Vector2(156.0, 50.0),
-        Vector2(155.0, 55.0),
-        Vector2(154.0, 60.0),
-        Vector2(145.0, 90.0),
-        Vector2(145.0, 95.0),
-        Vector2(140.0, 99.0),
-        Vector2(140.0, 100.0),
-        Vector2(130.0, 100.0),
-      ],
-    );
-
-    await add(
-      FlameMultiBlocProvider(
-        providers: [
-          FlameBlocProvider<WaveBloc, WaveState>.value(
-              value: waveBloc,
-              children: [
-                camera,
-                waveManager,
-              ]),
-          FlameBlocProvider<GameBloc, GameState>.value(
-              value: gameBloc,
-              children: [
-                camera,
-                waveManager,
-              ]),
-        ],
-      ),
-    );
+    await _blocSetup();
 
     return super.onLoad();
   }
@@ -359,18 +214,6 @@ class SatellitesGame extends Forge2DGame
   @override
   void update(double dt) {
     if (gameBloc.state.isNotGameOver) {
-      if (gameBloc.state.isNotMainMenu && !isGameStarted) {
-        if (muteTextComponent.text.isEmpty) {
-          muteTextComponent.text = '-Mute-';
-        }
-
-        if (waveText.isEmpty) {
-          waveText = 'Wave ${waveManager.waveNumber}';
-        }
-        removeAll([playButton, muteButton]);
-
-        isGameStarted = true;
-      }
       if (orbitingSatellites.length > currentLength) {
         switch (orbitingSatellites.last.difficulty) {
           case SatelliteDifficulty.easy:
@@ -404,9 +247,31 @@ class SatellitesGame extends Forge2DGame
     super.update(dt);
   }
 
-  void setUpWaves() {
+  void setUpHudText() {
+    muteTextComponent.text = '-Mute-';
+    upgradeTextComponent.text = '-Upgrades-';
+    waveText = 'Wave ${waveManager.waveNumber}';
+    removeAll([playButton, muteButton]);
+  }
+
+  void _setUpWaves() {
     asteroidSpawnManager = AsteroidSpawnManager();
-    world.add(asteroidSpawnManager);
+    // world.add(asteroidSpawnManager);
+
+    waveManager = WaveManager(
+      impulseTargets: [
+        Vector2(158.0, 40.0),
+        Vector2(155.0, 45.0),
+        Vector2(156.0, 50.0),
+        Vector2(155.0, 55.0),
+        Vector2(154.0, 60.0),
+        Vector2(145.0, 90.0),
+        Vector2(145.0, 95.0),
+        Vector2(140.0, 99.0),
+        Vector2(140.0, 100.0),
+        Vector2(130.0, 100.0),
+      ],
+    );
   }
 
   @override
@@ -471,11 +336,11 @@ class SatellitesGame extends Forge2DGame
   Future<void> _sendAsteroid(AsteroidComponent asteroid) async {
     try {
       final newAsteroid = AsteroidComponent(
-        speedScaling: asteroid.speedScaling,
+        speedScaling: asteroidSpawnManager.speedScaling,
         startPosition: Vector2.zero(),
-        startingDamage: asteroid.startingDamage,
+        startingDamage: smallDamage + asteroidSpawnManager.damageScaling,
         newPosition: asteroid.position,
-        sizeScaling: asteroid.sizeScaling,
+        sizeScaling: asteroidSpawnManager.sizeScaling,
         priority: 3,
       );
       newAsteroid.state = AsteroidState.firing;
@@ -492,6 +357,192 @@ class SatellitesGame extends Forge2DGame
   Future<void> _setTarget(Vector2 target) async {
     targetPosition.setFrom(
       target,
+    );
+  }
+
+  Future<void> _audioSetup() async {
+    audioComponent = AudioComponent();
+    await setUpAudio();
+  }
+
+  Future<void> _parallaxSetup() async {
+    final parallax = await loadParallaxComponent(
+      _imageNames,
+      baseVelocity: Vector2(20, 0),
+      velocityMultiplierDelta: Vector2(1.8, 1.0),
+      filterQuality: FilterQuality.none,
+    );
+
+    add(parallax);
+  }
+
+  void _buttonSetup() {
+    playButton = SatelliteHudButton(
+      position:
+          Vector2(camera.viewport.size.x / 20, camera.viewport.size.y / 2.5),
+      button: TextComponent(
+        text: '-Launch satellite-',
+        textRenderer: TextPaint(
+          style:
+              SatellitesTextStyle.titleLarge.copyWith(color: Colors.blueGrey),
+        ),
+      ),
+      onPressed: () {
+        waveBloc.add(WaveStarted());
+        gameBloc.add(GameStarted());
+      },
+    );
+
+    muteButton = SatelliteHudButton(
+      position:
+          Vector2(camera.viewport.size.x / 20, camera.viewport.size.y / 2),
+      button: TextComponent(
+        text: '-Mute-',
+        textRenderer: TextPaint(
+          style: SatellitesTextStyle.headlineSmall.copyWith(
+            color: Colors.red[400],
+          ),
+        ),
+      ),
+      onPressed: () {
+        isPlaying = !isPlaying;
+        _log.info('IsPlaying: $isPlaying');
+        updateSound();
+      },
+    );
+
+    muteTextComponent = TextComponent(
+      text: '',
+      textRenderer: TextPaint(
+        style: SatellitesTextStyle.headlineSmall.copyWith(
+          fontSize: 18,
+          color: Colors.red[400],
+        ),
+      ),
+    );
+
+    upgradeTextComponent = TextComponent(
+      text: '',
+      textRenderer: TextPaint(
+        style: SatellitesTextStyle.headlineSmall.copyWith(
+          fontSize: 18,
+          color: Colors.red[400],
+        ),
+      ),
+    );
+
+    inGameMuteButton = SatelliteHudButton(
+      size: Vector2(115, 25),
+      position: Vector2(gameWidth * .94, 50),
+      button: muteTextComponent,
+      onPressed: () {
+        isPlaying = !isPlaying;
+        _log.info('IsPlaying: $isPlaying');
+        updateSound();
+      },
+    );
+    inGameUpgradeButton = SatelliteHudButton(
+      size: Vector2(115, 25),
+      position: Vector2(gameWidth * .725, 50),
+      button: upgradeTextComponent,
+      onPressed: () => overlays.add('Upgrades'),
+    );
+  }
+
+  void _jupiterEarthSetup() {
+    jupiterComponent = JupiterComponent(
+      priority: 1,
+    );
+
+    jupiterGravityRepellentComponent = JupiterGravityRepellentComponent();
+
+    jupiterGravityComponent = JupiterGravityComponent();
+    jupiterSanityBarComponent = JupiterHealthBarComponent(
+      anchor: Anchor.center,
+    );
+
+    earthGravityComponent = EarthGravityComponent();
+    earthComponent = EarthComponent();
+  }
+
+  void _waveTextSetup() {
+    waveTextComponent = TextComponent(
+      anchor: Anchor.center,
+      text: waveText,
+      textRenderer: TextPaint(
+          style: SatellitesTextStyle.displayMedium
+              .copyWith(color: Colors.blueGrey[100])),
+    );
+    satellitesLeftTextComponent = TextComponent(
+      anchor: Anchor.center,
+      text: satellitesLeftText,
+      textRenderer: TextPaint(
+          style: SatellitesTextStyle.displayMedium
+              .copyWith(color: Colors.blueGrey[100])),
+    );
+  }
+
+  Future<void> _blocSetup() async => await add(
+        FlameMultiBlocProvider(
+          providers: [
+            FlameBlocProvider<WaveBloc, WaveState>.value(
+                value: waveBloc,
+                children: [
+                  camera,
+                  waveManager,
+                ]),
+            FlameBlocProvider<GameBloc, GameState>.value(
+                value: gameBloc,
+                children: [
+                  camera,
+                  waveManager,
+                ]),
+            FlameBlocProvider<UpgradesBloc, UpgradesState>.value(
+                value: upgradesBloc,
+                children: [
+                  camera,
+                  waveManager,
+                  asteroidSpawnManager,
+                ]),
+          ],
+        ),
+      );
+
+  void _cameraSetup() {
+    storyComponent = StoryComponent(
+      position: Vector2(50, 200),
+    );
+
+    final viewfinder = Viewfinder();
+
+    viewfinder
+      ..anchor = Anchor.topLeft
+      ..zoom = 10;
+    camera = CameraComponent.withFixedResolution(
+      width: gameWidth,
+      height: gameHeight,
+      world: world,
+      viewfinder: viewfinder,
+      hudComponents: [
+        FpsTextComponent(
+          position: Vector2.all(10),
+          textRenderer: TextPaint(
+              style: SatellitesTextStyle.titleMedium
+                  .copyWith(color: Colors.blueGrey[100])),
+        ),
+        waveTextComponent
+          ..position = Vector2(gameWidth / 2, waveTextComponent.height),
+        satellitesLeftTextComponent
+          ..position = Vector2(
+            gameWidth / 2,
+            waveTextComponent.height + waveTextComponent.height + 8,
+          ),
+        jupiterSanityBarComponent..position = Vector2(800, 25),
+        storyComponent,
+        inGameMuteButton,
+        mouseRenderComponent,
+        inGameUpgradeButton,
+      ],
     );
   }
 }

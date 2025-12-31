@@ -10,7 +10,7 @@ import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
-enum UpgradeType { speed, size, damage, quantity }
+enum LocalUpgradeType { speed, size, damage, quantity }
 
 class UpgradeComponent extends BodyComponent<SatellitesGame>
     with ContactCallbacks {
@@ -27,7 +27,7 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
   double fixedDeltaTime = 1 / 60;
   double accumulatedTime = 0;
 
-  final UpgradeType type;
+  final LocalUpgradeType type;
 
   bool isCollected = false;
 
@@ -64,28 +64,28 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
       repeat: false,
     );
     switch (type) {
-      case UpgradeType.speed:
+      case LocalUpgradeType.speed:
         // paint.color = Colors.yellow;
         lerpColor1 = Colors.amber[900]!;
         lerpColor2 = Colors.yellow;
 
         spriteImage = speedImage;
 
-      case UpgradeType.size:
+      case LocalUpgradeType.size:
         // paint.color = Colors.cyan;
 
         lerpColor1 = Colors.deepOrange[900]!;
         lerpColor2 = Colors.orange;
         spriteImage = sizeImage;
 
-      case UpgradeType.damage:
+      case LocalUpgradeType.damage:
         // paint.color = Colors.orange;
         lerpColor1 = Colors.blue[900]!;
         lerpColor2 = Colors.cyan;
 
         spriteImage = damageImage;
 
-      case UpgradeType.quantity:
+      case LocalUpgradeType.quantity:
         // paint.color = Colors.teal;
         lerpColor1 = Colors.green[900]!;
         lerpColor2 = Colors.teal;
@@ -111,12 +111,11 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
       priority: 1,
       position: _position.clone(),
       anchor: Anchor.center,
-      particle: parts.ScalingParticle(
-        to: 0,
-        lifespan: .50,
-        child: parts.AcceleratedParticle(
-          acceleration: Vector2(body.linearVelocity.x, -body.linearVelocity.y),
-          speed: getConsistentSpeed(),
+      particle: parts.AcceleratedParticle(
+        lifespan: 1,
+        speed: getConsistentSpeed(),
+        child: parts.ScalingParticle(
+          to: 0,
           child: parts.ComputedParticle(
             renderer: (canvas, particle) {
               canvas.drawCircle(
@@ -138,15 +137,14 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
   }
 
   void newParticles(Vector2 otherVelocity) {
-    List<ParticleSystemComponent> particles = [];
     final celebrateParticles = ParticleSystemComponent(
       position: position,
       anchor: Anchor.center,
       particle: parts.Particle.generate(
         count: 5,
-        lifespan: .5,
+        lifespan: .25,
         generator: (i) => parts.AcceleratedParticle(
-          speed: getSpeed(otherVelocity, i),
+          speed: game.randomVector2() / 4,
           child: parts.ScalingParticle(
             to: 0,
             child: parts.CircleParticle(
@@ -157,15 +155,14 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
         ),
       ),
     );
-    particles.add(celebrateParticles);
-    game.world.addAll(particles);
+    game.world.add(celebrateParticles);
   }
 
-  Vector2 getSpeed(Vector2 otherVelocity, int i) {
-    double xSpeed = otherVelocity.x + (i + (rnd.nextDouble() - 15));
-    double ySpeed = otherVelocity.y + (i - (rnd.nextDouble() + 15));
-    return Vector2(xSpeed, ySpeed);
-  }
+  // Vector2 getSpeed(Vector2 otherVelocity, int i) {
+  //   double xSpeed = otherVelocity.x + (i * (rnd.nextDouble() - 5));
+  //   double ySpeed = otherVelocity.y + (i - (rnd.nextDouble() + 5));
+  //   return Vector2(xSpeed, ySpeed);
+  // }
 
   @override
   void beginContact(Object other, Contact contact) {
@@ -173,7 +170,7 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
       game.audioComponent.onPowerUp();
       isCollected = true;
       newParticles(other.body.linearVelocity);
-      other.controllerBehavior.gainedUpgrade(type);
+      // other.controllerBehavior.gainedUpgrade(type);
 
       try {
         if (parent != null && parent!.isMounted) {
@@ -213,9 +210,6 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
         deathTimer.start();
       } else if (deathTimer.isRunning()) {
         deathTimer.update(dt);
-      }
-      if (!isCollected) {
-        body.setTransform(position, angle + .015);
       }
       accumulatedTime -= fixedDeltaTime;
     }
@@ -257,8 +251,8 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
   }
 
   Vector2 getConsistentSpeed() {
-    double ySpeed = rnd.nextDouble() * (10 + body.linearVelocity.y);
-    double xSpeed = rnd.nextDouble() * (2 - body.linearVelocity.x);
+    double ySpeed = rnd.nextDouble() * (6 + body.linearVelocity.y);
+    double xSpeed = rnd.nextDouble() * (10 - body.linearVelocity.x);
     return Vector2(
       xSpeed,
       ySpeed,
