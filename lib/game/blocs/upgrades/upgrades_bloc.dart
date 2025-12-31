@@ -149,6 +149,5 @@ class UpgradesBloc extends Bloc<UpgradesEvent, UpgradesState> {
   int _upgradeCost(int stateLevel) =>
       (5 + (stateLevel * (stateLevel / 1.5))).round();
 
-  bool _checkPurchasePower({required int cost}) =>
-      false /* state.totalPoints < cost */;
+  bool _checkPurchasePower({required int cost}) => state.totalPoints < cost;
 }
