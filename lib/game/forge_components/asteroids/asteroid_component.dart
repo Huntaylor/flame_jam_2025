@@ -78,9 +78,9 @@ class AsteroidComponent extends BodyComponent<SatellitesGame>
 
   @override
   Future<void> onLoad() {
-    // addSprite();
-    currentDamage = 250;
-    // currentDamage = startingDamage;
+    addSprite();
+    // currentDamage = 250;
+    currentDamage = startingDamage;
     _log.info('Current damage: $currentDamage');
 
     addBehaviors();

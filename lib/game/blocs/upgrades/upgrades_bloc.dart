@@ -11,6 +11,12 @@ class UpgradesBloc extends Bloc<UpgradesEvent, UpgradesState> {
   UpgradesBloc() : super(UpgradesState.initial()) {
     on<UpgradeSelected>(_onUpgradePurchase);
     on<UpgradePointsGained>(_onPointsGained);
+    on<UpgradeCometPointsGained>(_onCometPointsGained);
+  }
+
+  Future<void> _onCometPointsGained(
+      UpgradeCometPointsGained event, Emitter<UpgradesState> emit) async {
+    emit(state.copyWith(totalPoints: state.totalPoints + 20));
   }
 
   Future<void> _onUpgradePurchase(
@@ -118,21 +124,21 @@ class UpgradesBloc extends Bloc<UpgradesEvent, UpgradesState> {
   Future<void> _onPointsGained(
       UpgradePointsGained event, Emitter<UpgradesState> emit) async {
     switch (event.satelliteDifficulty) {
-      //? Worth 2 Points
+      //? Worth 1 Point
       case SatelliteDifficulty.easy:
-        emit(state.copyWith(totalPoints: state.totalPoints + 2));
+        emit(state.copyWith(totalPoints: state.totalPoints + 1));
 
       //? Worth 3 Points
       case SatelliteDifficulty.medium:
         emit(state.copyWith(totalPoints: state.totalPoints + 3));
 
-      //? Worth 5 Points
-      case SatelliteDifficulty.hard:
-        emit(state.copyWith(totalPoints: state.totalPoints + 5));
-
       //? Worth 8 Points
-      case SatelliteDifficulty.boss:
+      case SatelliteDifficulty.hard:
         emit(state.copyWith(totalPoints: state.totalPoints + 8));
+
+      //? Worth 10 Points
+      case SatelliteDifficulty.boss:
+        emit(state.copyWith(totalPoints: state.totalPoints + 10));
 
       //? Worth 4 Points
       case SatelliteDifficulty.fast:

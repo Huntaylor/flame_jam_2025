@@ -82,7 +82,7 @@ class WaveManager extends Component
 
   @override
   FutureOr<void> onLoad() async {
-    upgradeTimer = Timer(20,
+    upgradeTimer = Timer(45,
         onTick: () => createUpgrade(), autoStart: false, repeat: true);
     waveTimer = Timer(
       5,
@@ -143,7 +143,7 @@ class WaveManager extends Component
     }
     // if (game.isGameStarted && game.gameState != LocalGameState.end) {
     if (game.gameBloc.state.isStart) {
-      if (!upgradeTimer.isRunning()) {
+      if (!upgradeTimer.isRunning() && waveNumber > 3) {
         upgradeTimer.start();
       }
       if (game.waveBloc.state.isInProgress) {

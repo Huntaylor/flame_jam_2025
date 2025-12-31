@@ -37,6 +37,8 @@ class WaveBloc extends Bloc<WaveEvent, WaveState> {
 
     final pendingSpawn = await _generateWaveEnemies(emit);
 
+    _checkWavePoints(pendingSpawn);
+
     emit(state.copyWith(status: WaveStatus.start, pendingSpawn: pendingSpawn));
   }
 
@@ -248,5 +250,35 @@ class WaveBloc extends Bloc<WaveEvent, WaveState> {
       case SatelliteDifficulty.boss:
         return 10;
     }
+  }
+
+  void _checkWavePoints(List<SatelliteDifficulty> pendingSpawn) {
+    int totalWavePoints = 0;
+
+    for (var difficulty in pendingSpawn) {
+      switch (difficulty) {
+        //? Worth 1 Point
+        case SatelliteDifficulty.easy:
+          totalWavePoints = totalWavePoints + 1;
+
+        //? Worth 3 Points
+        case SatelliteDifficulty.medium:
+          totalWavePoints = totalWavePoints + 3;
+
+        //? Worth 8 Points
+        case SatelliteDifficulty.hard:
+          totalWavePoints = totalWavePoints + 8;
+
+        //? Worth 10 Points
+        case SatelliteDifficulty.boss:
+          totalWavePoints = totalWavePoints + 10;
+
+        //? Worth 4 Points
+        case SatelliteDifficulty.fast:
+          totalWavePoints = totalWavePoints + 4;
+      }
+    }
+
+    _log.info('Total possible points for this wave: $totalWavePoints');
   }
 }

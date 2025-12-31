@@ -442,7 +442,7 @@ class SatellitesGame extends Forge2DGame
       },
     );
     inGameUpgradeButton = SatelliteHudButton(
-      size: Vector2(115, 25),
+      size: Vector2(180, 25),
       position: Vector2(gameWidth * .725, 50),
       button: upgradeTextComponent,
       onPressed: () => overlays.add('Upgrades'),

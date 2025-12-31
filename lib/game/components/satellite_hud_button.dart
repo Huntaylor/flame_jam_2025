@@ -10,5 +10,6 @@ class SatelliteHudButton extends HudButtonComponent {
     super.priority,
     super.button,
     super.buttonDown,
+    super.margin,
   });
 }

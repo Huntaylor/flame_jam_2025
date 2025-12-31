@@ -201,6 +201,7 @@ class SatelliteComponent extends BodyComponent<SatellitesGame>
 
   late final SatelliteControllerBehavior controllerBehavior =
       findBehavior<SatelliteControllerBehavior>();
+
   @override
   Future<void> onLoad() {
     // debugMode = true;

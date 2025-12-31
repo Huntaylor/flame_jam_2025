@@ -1,10 +1,10 @@
 import 'dart:math';
-import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/particles.dart' as parts;
 import 'package:flame_forge2d/flame_forge2d.dart';
+import 'package:flame_jam_2025/game/blocs/upgrades/upgrades_bloc.dart';
 import 'package:flame_jam_2025/game/forge_components/asteroids/asteroid_component.dart';
 import 'package:flame_jam_2025/game/satellites_game.dart';
 import 'package:flutter/material.dart';
@@ -37,25 +37,26 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
 
   late Timer deathTimer;
 
-  late ui.Image damageImage;
-  late ui.Image quantityImage;
-  late ui.Image sizeImage;
-  late ui.Image speedImage;
+  // late ui.Image damageImage;
+  // late ui.Image quantityImage;
+  // late ui.Image sizeImage;
+  // late ui.Image speedImage;
 
   final newPaint = Paint();
 
-  late SpriteComponent spriteComponent;
+  // late SpriteComponent spriteComponent;
+  late CircleComponent spriteComponent;
 
   Color lerpColor1 = Colors.yellow;
   Color lerpColor2 = Colors.amber[900]!;
 
   @override
   Future<void> onLoad() async {
-    ui.Image spriteImage;
-    damageImage = await game.images.load('damage.png');
-    quantityImage = await game.images.load('quantity.png');
-    sizeImage = await game.images.load('size_increase.png');
-    speedImage = await game.images.load('speed_up_sprite.png');
+    // ui.Image spriteImage;
+    // damageImage = await game.images.load('damage.png');
+    // quantityImage = await game.images.load('quantity.png');
+    // sizeImage = await game.images.load('size_increase.png');
+    // speedImage = await game.images.load('speed_up_sprite.png');
 
     deathTimer = Timer(
       3,
@@ -69,39 +70,46 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
         lerpColor1 = Colors.amber[900]!;
         lerpColor2 = Colors.yellow;
 
-        spriteImage = speedImage;
+      // spriteImage = speedImage;
 
       case LocalUpgradeType.size:
         // paint.color = Colors.cyan;
 
         lerpColor1 = Colors.deepOrange[900]!;
         lerpColor2 = Colors.orange;
-        spriteImage = sizeImage;
+      // spriteImage = sizeImage;
 
       case LocalUpgradeType.damage:
         // paint.color = Colors.orange;
         lerpColor1 = Colors.blue[900]!;
         lerpColor2 = Colors.cyan;
 
-        spriteImage = damageImage;
+      // spriteImage = damageImage;
 
       case LocalUpgradeType.quantity:
         // paint.color = Colors.teal;
         lerpColor1 = Colors.green[900]!;
         lerpColor2 = Colors.teal;
 
-        spriteImage = quantityImage;
+      // spriteImage = quantityImage;
     }
 
     paint.color = lerpColor1;
     priority = 4;
-    spriteComponent = SpriteComponent.fromImage(spriteImage,
-        size: Vector2.all(2),
+    // spriteComponent = SpriteComponent.fromImage(spriteImage,
+    //     size: Vector2.all(2),
+    //     position: game.earthPosition,
+    //     priority: 5,
+    //     anchor: Anchor.center);
+    spriteComponent = CircleComponent(
+        radius: 1,
         position: game.earthPosition,
         priority: 5,
-        anchor: Anchor.center);
-
+        anchor: Anchor.center,
+        paint: paint);
     game.world.add(spriteComponent);
+
+    // game.world.add(spriteComponent);
 
     return super.onLoad();
   }
@@ -158,19 +166,13 @@ class UpgradeComponent extends BodyComponent<SatellitesGame>
     game.world.add(celebrateParticles);
   }
 
-  // Vector2 getSpeed(Vector2 otherVelocity, int i) {
-  //   double xSpeed = otherVelocity.x + (i * (rnd.nextDouble() - 5));
-  //   double ySpeed = otherVelocity.y + (i - (rnd.nextDouble() + 5));
-  //   return Vector2(xSpeed, ySpeed);
-  // }
-
   @override
   void beginContact(Object other, Contact contact) {
     if (other is AsteroidComponent && other.isFiring && !isCollected) {
       game.audioComponent.onPowerUp();
       isCollected = true;
       newParticles(other.body.linearVelocity);
-      // other.controllerBehavior.gainedUpgrade(type);
+      game.upgradesBloc.add(UpgradeCometPointsGained());
 
       try {
         if (parent != null && parent!.isMounted) {

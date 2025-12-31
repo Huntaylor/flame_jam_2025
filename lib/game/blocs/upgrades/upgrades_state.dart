@@ -45,11 +45,11 @@ class UpgradesState extends Equatable {
         sizeLevel = 0,
         quantityLevel = 0,
         capacityLevel = 1,
-        damageCost = 5,
-        speedCost = 5,
-        sizeCost = 5,
-        quantityCost = 5,
-        capacityCost = 5,
+        damageCost = 10,
+        speedCost = 10,
+        sizeCost = 10,
+        quantityCost = 10,
+        capacityCost = 10,
         totalPoints = 0;
 
   @override

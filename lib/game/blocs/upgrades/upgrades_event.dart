@@ -20,3 +20,5 @@ class UpgradePointsGained extends UpgradesEvent {
   @override
   List<Object?> get props => _$props;
 }
+
+class UpgradeCometPointsGained extends UpgradesEvent {}
